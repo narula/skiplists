@@ -1,4 +1,5 @@
 *~
 *.o
+*.pdf
 skiplist
 rtm.c

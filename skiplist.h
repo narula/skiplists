@@ -1,14 +1,11 @@
 
 #define MAX_LEVEL 5
 
-struct nextinfo {
-  struct node* next;
-  int prefix_hint;
-};
-
 struct node {
   int key;
-  struct nextinfo nexts[MAX_LEVEL];
+  int topLevel;
+  struct node* next[MAX_LEVEL];
+  int prefix[MAX_LEVEL];
 };
 
 class SkipList {
@@ -20,6 +17,7 @@ class SkipList {
   int insert(int key);
 
   void print_skiplist();
+  void pretty_print_skiplist();
 
  private:
   int findNode(int key, node* preds[], node* succs[]);

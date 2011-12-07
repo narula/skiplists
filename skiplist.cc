@@ -62,8 +62,15 @@ int SkipList::lookup(int key) {
 }
 
 int randomLevel(int max) {
-  int l = rand() % max;
-  return l;
+  unsigned long long x = rand();
+  int layer = 0;
+  while((x & 1) != 0){
+	layer += 1;
+	x >>= 1;
+  }
+  if(layer >= max)
+	layer = max - 1;
+  return layer;
 }
 
 int SkipList::insert(int key) {
@@ -77,7 +84,7 @@ int SkipList::insert(int key) {
   add->key = key;
   int topLevel = randomLevel(MAX_LEVEL);
   add->topLevel = topLevel;
-  for (int i = 0; i <= topLevel; i++) {
+  for (int i = 0; i < topLevel; i++) {
 	add->next[i] = succs[i];
 	add->prefix[i] = succs[i]->key;
 	preds[i]->next[i] = add;
@@ -99,18 +106,44 @@ void SkipList::print_skiplist() {
 void SkipList::pretty_print_skiplist() {
   node* ptr = head;
   while (ptr != 0) {
-	for (int i = 0; i <= ptr->topLevel; i++) {
-	  printf("[K:%04d] ", ptr->key);
+	if (ptr != head) {
+	  for (int i = 0; i < ptr->topLevel; i++) {
+		printf("   V   ");
+	  }
+	  for (int i = ptr->topLevel; i < MAX_LEVEL; i++) {
+		printf("   |   ");
+	  }
 	}
 	printf("\n");
-	for (int i = 0; i <= ptr->topLevel; i++) {
-	  int prefix = 0;
-	  if (ptr->next[i] != 0) {
-		prefix = ptr->next[i]->key;
+	if (ptr == tail) {
+	  for (int i = 0; i < MAX_LEVEL; i++) {
+		printf("[K:ND] ");
 	  }
-	  printf("[N:%04d] ", prefix);
+	  printf("\n");
+	  return;
 	}
-	printf("\n|\nV\n");
+	for (int i = 0; i < ptr->topLevel; i++) {
+	  printf("[K:%02d] ", ptr->key);
+	}
+	for (int i = ptr->topLevel; i < MAX_LEVEL; i++) {
+	  printf("   |   ");
+	}
+	printf("\n");
+	for (int i = 0; i < ptr->topLevel; i++) {
+	  if (ptr->prefix[i] == INT_MAX) {
+		printf("[P:ND] ");
+	  } else {
+		printf("[P:%02d] ", ptr->prefix[i]);
+	  }
+	}
+	for (int i = ptr->topLevel; i < MAX_LEVEL; i++) {
+	  printf("   |   ");
+	}
+	printf("\n");
+	for (int i = 0; i < MAX_LEVEL; i++) {
+	  printf("   |   ");
+	}
+	printf ("\n");
 	ptr = ptr->next[0];
   }
 }
@@ -137,6 +170,9 @@ int main(int argc, char** argv) {
   SkipList* stest2 = init_list(LIST_SIZE, POOL);
   assert(stest2);
   timespec ts;
+  if (LIST_SIZE < 20) {
+	stest2->pretty_print_skiplist();
+  }
   clock_gettime(CLOCK_MONOTONIC, &ts);
   time_t start = ts.tv_sec*1000000000 + ts.tv_nsec;
   for (int i = 0; i < ITERATIONS; i++) {
@@ -150,13 +186,16 @@ int main(int argc, char** argv) {
   clock_gettime(CLOCK_MONOTONIC, &ts);
   time_t insert_time = ts.tv_sec*1000000000 + ts.tv_nsec;
 
-  printf("Timing(microsec) insert: %ld, lookup: %ld, %d itr, %d size\n", 
-		 (insert_time-lookup_time)/(1000*ITERATIONS), (lookup_time-start)/(1000*ITERATIONS), ITERATIONS, LIST_SIZE);
+  printf("insert: %ld; lookup: %ld; itr: %d; size: %d\n", 
+		 (insert_time-lookup_time)/(ITERATIONS), (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE);
 }
 
 
 // Read-only not-concurrent skip list working
-// Measure perf  --  fix amount of time, not amount of work.
+// Measure perf  --  fix amount of time, not amount of work.  setitimer.
+// Verify O(logn) performance
+// bench.py to run with different sizes, write output to directory structure.
+// verify log_2 performance
 // Concurrent skip list working
 // multi-threaded measure perf
 // log_4 algorithm read-only (not concurrent?) skip list working

@@ -1,5 +1,5 @@
 
-#define MAX_LEVEL 5
+#define MAX_LEVEL 20
 
 struct node {
   int key;

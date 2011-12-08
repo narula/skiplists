@@ -10,7 +10,7 @@ struct node {
 
 class SkipList {
  public:
-  SkipList();
+  SkipList(int prob);
   ~SkipList();
 
   int lookup(int key);
@@ -23,4 +23,6 @@ class SkipList {
   int findNode(int key, node* preds[], node* succs[]);
   node* head;
   node* tail;
+  int probability;
+  int max_level;
 };

@@ -5,6 +5,7 @@
 #include <time.h>
 #include <limits.h>
 #include <cstdlib>
+#include <math.h>
 
 node* new_node() {
   node* nnode = new node();
@@ -15,9 +16,11 @@ node* new_node() {
   return nnode;
 }
 
-SkipList::SkipList() {
+SkipList::SkipList(int prob) {
   head = new_node();
   tail = new_node();
+  probability = prob;
+  max_level = floor(log(1000000)/log(probability));
   head->key = -1;
   head->topLevel = MAX_LEVEL;
   tail->key = INT_MAX;
@@ -36,7 +39,7 @@ SkipList::~SkipList() {
 int SkipList::findNode(int key, node* preds[], node* succs[]) {
   int lFound = -1;
   node* pred = head;
-  for (int level = MAX_LEVEL-1; level >= 0; level--) {
+  for (int level = max_level-1; level >= 0; level--) {
 	node* curr = pred->next[level];
 	while (key > pred->prefix[level]) {
 	  pred = curr; 
@@ -61,12 +64,28 @@ int SkipList::lookup(int key) {
   }
 }
 
-int randomLevel(int max) {
+int randomLevel(int max, int probability) {
   unsigned long long x = rand();
   int layer = 0;
-  while((x & 1) != 0){
-	layer += 1;
-	x >>= 1;
+  switch (probability) {
+  case 4:
+	while((x & 3) == 3){
+	  layer += 1;
+	  x >>= 2;
+	}
+	break;
+  case 8:
+	while((x & 7) == 7){
+	  layer += 1;
+	  x >>= 3;
+	}
+	break;
+  default:
+	while((x & 1) != 0) {
+	  layer += 1;
+	  x >>= 1;
+	}
+	break;
   }
   if(layer >= max)
 	layer = max - 1;
@@ -82,9 +101,9 @@ int SkipList::insert(int key) {
   }
   node* add = new_node();
   add->key = key;
-  int topLevel = randomLevel(MAX_LEVEL);
-  add->topLevel = topLevel;
-  for (int i = 0; i < topLevel; i++) {
+  int topLevel = randomLevel(max_level, probability);
+  add->topLevel = topLevel+1;
+  for (int i = 0; i <= topLevel; i++) {
 	add->next[i] = succs[i];
 	add->prefix[i] = succs[i]->key;
 	preds[i]->next[i] = add;
@@ -148,29 +167,30 @@ void SkipList::pretty_print_skiplist() {
   }
 }
 
-SkipList* init_list(int sz, int high) {
-  SkipList* skip = new SkipList();
+SkipList* init_list(int sz, int high, int probability) {
+  SkipList* skip = new SkipList(probability);
   int ret = 0;
-  for (int i = 0; i < sz; i++) {
+  int count = 0;
+  while (count < sz) {
 	ret = skip->insert(rand() % high);
-	if (ret < 0) {
-	  printf("Problem! %d\n", i);
-	  skip->pretty_print_skiplist();
-	  return NULL;
+	if (ret > 0) {
+	  count++;
 	}
   }
   return skip;
 }
 
 int main(int argc, char** argv) {
+  srand(time(NULL));
   int LIST_SIZE = atoi(argv[1]);
+  int PROBABILITY = atoi(argv[2]);
   int POOL = 3*LIST_SIZE;
   int ITERATIONS = 10000;
   int seconds = 10;
-  SkipList* stest2 = init_list(LIST_SIZE, POOL);
+  SkipList* stest2 = init_list(LIST_SIZE, POOL, PROBABILITY);
   assert(stest2);
   timespec ts;
-  if (LIST_SIZE < 20) {
+  if (LIST_SIZE < 100) {
 	stest2->pretty_print_skiplist();
   }
   clock_gettime(CLOCK_MONOTONIC, &ts);

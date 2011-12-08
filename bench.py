@@ -1,16 +1,18 @@
 #!/usr/bin/python
 import os
+import sys
 import commands
 
-ITR = (50000, 100000, 200000, 500000, 1000000, 2000000, 3000000, 5000000, 10000000)
+ITR = (1000, 50000, 100000, 200000, 500000, 1000000, 2000000, 3000000, 5000000, 10000000)
+ITR = (1000, 50000, 100000, 200000, 500000, 1000000, 2000000)
 
-def main(args):
-    f = open('graphs/plain.dat', 'w')
+def one(fanout):
+    f = open('graphs/plain.dat%d' % fanout, 'w')
     itr = 3
     for i in ITR:
         d = {}
         for k in range(0, itr):
-            t = commands.getoutput("./skiplist %d" % i)
+            t = commands.getoutput("./skiplist %d %d" % (i, fanout))
             print t
             var = t.split(';')
             for v in var:
@@ -23,7 +25,11 @@ def main(args):
                     d[key] = val
         f.write("%d\t%d\t%d\n" % (d['size']/itr, d['insert']/itr, d['lookup']/itr))
     f.close()
-    os.system("cd graphs && ./plain.gp && cd .. && evince graphs/plain.pdf")
             
 if __name__ == "__main__":
-    main(None)
+    if len(sys.argv) > 1:
+        one(int(sys.argv[1]))
+    else:
+        for f in (2, 4, 8):
+            one(f)
+    os.system("cd graphs && ./plain.gp && cd .. && evince graphs/plain.pdf")

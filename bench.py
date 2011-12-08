@@ -1,13 +1,14 @@
 #!/usr/bin/python
 import os
 import sys
+import time
 import commands
 
 ITR = (1000, 50000, 100000, 200000, 500000, 1000000, 2000000, 3000000, 5000000, 10000000)
-ITR = (1000, 50000, 100000, 200000, 500000, 1000000, 2000000, 3000000, 4000000)
+ITR = (1000, 50000, 100000, 200000, 500000, 1000000, 2000000)
 
-def one(fanout):
-    f = open('graphs/plain.dat%d' % fanout, 'w')
+def one(datafile, fanout):
+    f = open(datafile, 'w')
     itr = 3
     for i in ITR:
         d = {}
@@ -27,9 +28,15 @@ def one(fanout):
     f.close()
             
 if __name__ == "__main__":
+    datadir = time.strftime("%Y-%m-%d.%H:%M:%S", time.localtime())
+    os.system("mkdir graphs/%s" % datadir)
+    os.system("cp graphs/plain.gp graphs/%s/plain.gp" % datadir)
     if len(sys.argv) > 1:
-        one(int(sys.argv[1]))
+        fanout = int(sys.argv[1])
+        datafile = "graphs/"+datadir+"/plain.dat%d" % fanout
+        one(fanout)
     else:
         for f in (2, 4, 8):
-            one(f)
-    os.system("cd graphs && ./plain.gp && cd .. && evince graphs/plain.pdf")
+            datafile = "graphs/"+datadir+"/plain.dat%d" % f
+            one(datafile, f)
+    os.system("cd graphs/%s && ./plain.gp && cd ../.. && evince graphs/%s/plain.pdf" % (datadir, datadir))

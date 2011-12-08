@@ -4,7 +4,7 @@ import sys
 import time
 import commands
 
-ITR = (1000, 50000, 100000, 200000, 500000, 1000000, 2000000, 3000000, 5000000, 10000000)
+ITR = (1000, 50000, 100000, 200000, 500000, 1000000, 2000000, 10000000)
 
 def one(datafile, fanout):
     f = open(datafile, 'w')
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     datadir = time.strftime("%Y-%m-%d.%H:%M:%S", time.localtime())
     os.system("mkdir graphs/%s" % datadir)
     os.system("cp graphs/plain.gp graphs/%s/plain.gp" % datadir)
-    for f in (2, 4, 8):
+    for f in (2, 4):
         datafile = "graphs/"+datadir+"/plain.dat%d" % f
         one(datafile, f)
     os.system("cd graphs/%s && ./plain.gp && cd ../.. && evince graphs/%s/plain.pdf &" % (datadir, datadir))

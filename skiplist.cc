@@ -7,26 +7,18 @@
 #include <cstdlib>
 #include <math.h>
 
-node* new_node() {
-  node* nnode = new node();
-  // for (int i = 0; i < MAX_LEVEL; i++) {
-  // 	nnode->next[i] = 0;
-  // 	nnode->prefix[i] = 0;
-  // }
-  return nnode;
-}
 
-SkipList::SkipList(int prob, int sz) {
-  head = new_node();
-  tail = new_node();
+SkipList::SkipList(int prob, int maxl) {
+  head = new node();
+  tail = new node();
   probability = prob;
-  max_level = floor(log(sz)/log(probability));
+  max_level = maxl;
   if (max_level == 0) max_level = 1;
   if (max_level > MAX_LEVEL) max_level = MAX_LEVEL;
   head->key = -1;
-  head->topLevel = MAX_LEVEL;
+  head->topLevel = maxl;
   tail->key = INT_MAX;
-  tail->topLevel = MAX_LEVEL;
+  tail->topLevel = maxl;
   for (int i = 0; i < MAX_LEVEL; i++) {
 	head->nexts[i].nxt = tail;
 	head->nexts[i].prefix = INT_MAX;
@@ -38,10 +30,60 @@ SkipList::~SkipList() {
   if (tail) delete tail;
 }
 
+int SkipList::lookup(int key) {
+  node* preds[max_level];
+  node* succs[max_level];
+  if (findNode(key, preds, succs) >= 0) {
+	return 1;
+  } else {
+	return 0;
+  }
+}
+
+int randomLevel(int max, int probability) {
+  unsigned long long x = rand();
+  int toplayer = 1;
+  switch (probability) {
+  case 4:
+	while((x & 3) == 3){
+	  toplayer += 1;
+	  x >>= 2;
+	}
+	break;
+  case 8:
+	while((x & 7) == 7){
+	  toplayer += 1;
+	  x >>= 3;
+	}
+	break;
+  case 16:
+	while((x & 15) == 15){
+	  toplayer += 1;
+	  x >>= 4;
+	}
+	break;
+  case 32:
+	while((x & 31) == 31){
+	  toplayer += 1;
+	  x >>= 5;
+	}
+	break;
+  default:
+	while((x & 1) != 0) {
+	  toplayer += 1;
+	  x >>= 1;
+	}
+	break;
+  }
+  if(toplayer > max)
+	toplayer = max;
+  return toplayer;
+}
+
 int SkipList::findNode(int key, node* preds[], node* succs[]) {
   int lFound = -1;
   node* pred = head;
-  for (int level = max_level-1; level >= 0; level--) {
+  for (int level = pred->topLevel-1; level >= 0; level--) {
 	node* curr = pred->nexts[level].nxt;
 	while (key > pred->nexts[level].prefix) {
 	  pred = curr; 
@@ -56,68 +98,18 @@ int SkipList::findNode(int key, node* preds[], node* succs[]) {
   return lFound;
 }
 
-int SkipList::lookup(int key) {
-  node* preds[MAX_LEVEL];
-  node* succs[MAX_LEVEL];
-  if (findNode(key, preds, succs) >= 0) {
-	return 1;
-  } else {
-	return 0;
-  }
-}
-
-int randomLevel(int max, int probability) {
-  unsigned long long x = rand();
-  int layer = 0;
-  switch (probability) {
-  case 4:
-	while((x & 3) == 3){
-	  layer += 1;
-	  x >>= 2;
-	}
-	break;
-  case 8:
-	while((x & 7) == 7){
-	  layer += 1;
-	  x >>= 3;
-	}
-	break;
-  case 16:
-	while((x & 15) == 15){
-	  layer += 1;
-	  x >>= 4;
-	}
-	break;
-  case 32:
-	while((x & 31) == 31){
-	  layer += 1;
-	  x >>= 5;
-	}
-	break;
-  default:
-	while((x & 1) != 0) {
-	  layer += 1;
-	  x >>= 1;
-	}
-	break;
-  }
-  if(layer >= max)
-	layer = max - 1;
-  return layer;
-}
-
 int SkipList::insert(int key) {
-  node *preds[MAX_LEVEL], *succs[MAX_LEVEL];
+  node *preds[max_level], *succs[max_level];
   int lFound = findNode(key, preds, succs);
   if (lFound != -1) {
 	node* found = succs[lFound];
 	return 0;
   }
-  node* add = new_node();
+  node* add = new node();
   add->key = key;
   int topLevel = randomLevel(max_level, probability);
-  add->topLevel = topLevel+1;
-  for (int i = 0; i <= topLevel; i++) {
+  add->topLevel = topLevel;
+  for (int i = 0; i < topLevel; i++) {
 	add->nexts[i].nxt = succs[i];
 	add->nexts[i].prefix = succs[i]->key;
 	preds[i]->nexts[i].nxt = add;
@@ -143,13 +135,13 @@ void SkipList::pretty_print_skiplist() {
 	  for (int i = 0; i < ptr->topLevel; i++) {
 		printf("   V   ");
 	  }
-	  for (int i = ptr->topLevel; i < MAX_LEVEL; i++) {
+	  for (int i = ptr->topLevel; i < max_level; i++) {
 		printf("   |   ");
 	  }
 	}
 	printf("\n");
 	if (ptr == tail) {
-	  for (int i = 0; i < MAX_LEVEL; i++) {
+	  for (int i = 0; i < max_level; i++) {
 		printf("[K:ND] ");
 	  }
 	  printf("\n");
@@ -158,7 +150,7 @@ void SkipList::pretty_print_skiplist() {
 	for (int i = 0; i < ptr->topLevel; i++) {
 	  printf("[K:%02d] ", ptr->key);
 	}
-	for (int i = ptr->topLevel; i < MAX_LEVEL; i++) {
+	for (int i = ptr->topLevel; i < max_level; i++) {
 	  printf("   |   ");
 	}
 	printf("\n");
@@ -169,11 +161,11 @@ void SkipList::pretty_print_skiplist() {
 		printf("[P:%02d] ", ptr->nexts[i].prefix);
 	  }
 	}
-	for (int i = ptr->topLevel; i < MAX_LEVEL; i++) {
+	for (int i = ptr->topLevel; i < max_level; i++) {
 	  printf("   |   ");
 	}
 	printf("\n");
-	for (int i = 0; i < MAX_LEVEL; i++) {
+	for (int i = 0; i < max_level; i++) {
 	  printf("   |   ");
 	}
 	printf ("\n");
@@ -181,27 +173,59 @@ void SkipList::pretty_print_skiplist() {
   }
 }
 
-SkipList* init_list(int sz, int high, int probability) {
-  SkipList* skip = new SkipList(probability, sz);
-  int ret = 0;
+SkipList* SkipList::init_list(int sz, int high, int probability) {
+  int maxl = floor(log(sz)/log(probability));
+  SkipList* skip = new SkipList(probability, maxl);
   int count = 0;
   while (count < sz) {
-	ret = skip->insert(rand() % high);
-	if (ret > 0) {
+	if (skip->insert(rand() % high) > 0) {
 	  count++;
 	}
   }
   return skip;
 }
 
+void basic_test() {
+  SkipList* sk = SkipList::init_list(1000, 1000, 2);
+  int error = 0;
+  for (int i = 999; i >= 0; i--) {
+	if (sk->lookup(i) <= 0) {
+	  printf("Error lookup: %d\n", i);
+	  error = 1;
+	}
+  }
+  if (sk->insert(998) > 0) {
+	printf("Error insert: %d\n", 998);
+	error = 1;
+  }
+  if (sk->lookup(2000) > 0) {
+	  printf("Error lookup: %d\n", 2000);
+	  error = 1;
+  }
+  if (sk->insert(2000) <= 0) {
+	printf("Error insert: %d\n", 2000);
+	error = 1;
+  }
+  if (sk->lookup(2000) <= 0) {
+	printf("Error lookup: %d\n", 2000);
+	error = 1;
+  }
+  if (!error) 
+	printf("PASSED\n");
+}
+
 int main(int argc, char** argv) {
+  if (argc < 2) {
+	basic_test();
+	return 0;
+  }
   srand(time(NULL));
   int LIST_SIZE = atoi(argv[1]);
   int PROBABILITY = atoi(argv[2]);
   int POOL = 3*LIST_SIZE;
   int ITERATIONS = 10000;
   int seconds = 10;
-  SkipList* stest2 = init_list(LIST_SIZE, POOL, PROBABILITY);
+  SkipList* stest2 = SkipList::init_list(LIST_SIZE, POOL, PROBABILITY);
   assert(stest2);
   timespec ts;
   if (LIST_SIZE < 100) {
@@ -230,7 +254,8 @@ int main(int argc, char** argv) {
 // [DONE] Verify O(logn) performance
 // [DONE] bench.py to run with different sizes, write output.
 // [DONE] verify log_2 performance
-// re-order node array to move prefixes and next nodes together, benchmark
+// [DONE] re-order node array to move prefixes and next nodes together, benchmark
+// order arrays so top level is at 0.
 // log_4 algorithm read-only (not concurrent?) skip list working
 // Fix amount of time, not amount of work.  setitimer.
 // multi-threaded measure perf

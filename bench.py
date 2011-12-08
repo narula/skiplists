@@ -31,12 +31,7 @@ if __name__ == "__main__":
     datadir = time.strftime("%Y-%m-%d.%H:%M:%S", time.localtime())
     os.system("mkdir graphs/%s" % datadir)
     os.system("cp graphs/plain.gp graphs/%s/plain.gp" % datadir)
-    if len(sys.argv) > 1:
-        fanout = int(sys.argv[1])
-        datafile = "graphs/"+datadir+"/plain.dat%d" % fanout
-        one(fanout)
-    else:
-        for f in (2, 4, 8):
-            datafile = "graphs/"+datadir+"/plain.dat%d" % f
-            one(datafile, f)
+    for f in (2, 4, 8):
+        datafile = "graphs/"+datadir+"/plain.dat%d" % f
+        one(datafile, f)
     os.system("cd graphs/%s && ./plain.gp && cd ../.. && evince graphs/%s/plain.pdf" % (datadir, datadir))

@@ -9,10 +9,10 @@
 
 node* new_node() {
   node* nnode = new node();
-  for (int i = 0; i < MAX_LEVEL; i++) {
-	nnode->next[i] = 0;
-	nnode->prefix[i] = 0;
-  }
+  // for (int i = 0; i < MAX_LEVEL; i++) {
+  // 	nnode->next[i] = 0;
+  // 	nnode->prefix[i] = 0;
+  // }
   return nnode;
 }
 

@@ -1,6 +1,7 @@
 *~
 *.o
 *.pdf
+notes.txt
 graphs/fit.log
 skiplist
 rtm.c

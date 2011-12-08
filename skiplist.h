@@ -10,7 +10,7 @@ struct node {
 
 class SkipList {
  public:
-  SkipList(int prob);
+  SkipList(int prob, int sz);
   ~SkipList();
 
   int lookup(int key);

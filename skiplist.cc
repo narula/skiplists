@@ -16,11 +16,13 @@ node* new_node() {
   return nnode;
 }
 
-SkipList::SkipList(int prob) {
+SkipList::SkipList(int prob, int sz) {
   head = new_node();
   tail = new_node();
   probability = prob;
-  max_level = floor(log(1000000)/log(probability));
+  max_level = floor(log(sz)/log(probability));
+  if (max_level == 0) max_level = 1;
+  if (max_level > MAX_LEVEL) max_level = MAX_LEVEL;
   head->key = -1;
   head->topLevel = MAX_LEVEL;
   tail->key = INT_MAX;
@@ -78,6 +80,18 @@ int randomLevel(int max, int probability) {
 	while((x & 7) == 7){
 	  layer += 1;
 	  x >>= 3;
+	}
+	break;
+  case 16:
+	while((x & 15) == 15){
+	  layer += 1;
+	  x >>= 4;
+	}
+	break;
+  case 32:
+	while((x & 31) == 31){
+	  layer += 1;
+	  x >>= 5;
 	}
 	break;
   default:
@@ -168,7 +182,7 @@ void SkipList::pretty_print_skiplist() {
 }
 
 SkipList* init_list(int sz, int high, int probability) {
-  SkipList* skip = new SkipList(probability);
+  SkipList* skip = new SkipList(probability, sz);
   int ret = 0;
   int count = 0;
   while (count < sz) {
@@ -206,16 +220,17 @@ int main(int argc, char** argv) {
   clock_gettime(CLOCK_MONOTONIC, &ts);
   time_t insert_time = ts.tv_sec*1000000000 + ts.tv_nsec;
 
-  printf("insert: %ld; lookup: %ld; itr: %d; size: %d\n", 
-		 (insert_time-lookup_time)/(ITERATIONS), (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE);
+  printf("insert: %ld; lookup: %ld; itr: %d; size: %d; levels: %d; probability: %d\n", 
+		 (insert_time-lookup_time)/(ITERATIONS), (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE, int(floor(log(LIST_SIZE)/log(PROBABILITY))), PROBABILITY);
 }
 
 
-// Read-only not-concurrent skip list working
-// Measure perf  --  fix amount of time, not amount of work.  setitimer.
-// Verify O(logn) performance
-// bench.py to run with different sizes, write output to directory structure.
-// verify log_2 performance
-// Concurrent skip list working
-// multi-threaded measure perf
+// [DONE] Read-only not-concurrent skip list working
+// [DONE] Measure perf
+// [DONE] Verify O(logn) performance
+// [DONE] bench.py to run with different sizes, write output.
+// [DONE] verify log_2 performance
 // log_4 algorithm read-only (not concurrent?) skip list working
+// Fix amount of time, not amount of work.  setitimer.
+// multi-threaded measure perf
+// Concurrent skip list working

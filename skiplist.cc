@@ -230,6 +230,7 @@ int main(int argc, char** argv) {
 // [DONE] Verify O(logn) performance
 // [DONE] bench.py to run with different sizes, write output.
 // [DONE] verify log_2 performance
+// re-order node array to move prefixes and next nodes together, benchmark
 // log_4 algorithm read-only (not concurrent?) skip list working
 // Fix amount of time, not amount of work.  setitimer.
 // multi-threaded measure perf

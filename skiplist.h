@@ -1,11 +1,15 @@
 
 #define MAX_LEVEL 20
 
+struct next {
+  int prefix;
+  struct node* nxt;
+};
+
 struct node {
   int key;
   int topLevel;
-  struct node* next[MAX_LEVEL];
-  int prefix[MAX_LEVEL];
+  struct next nexts[MAX_LEVEL];
 };
 
 class SkipList {

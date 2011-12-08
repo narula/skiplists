@@ -28,8 +28,8 @@ SkipList::SkipList(int prob, int sz) {
   tail->key = INT_MAX;
   tail->topLevel = MAX_LEVEL;
   for (int i = 0; i < MAX_LEVEL; i++) {
-	head->next[i] = tail;
-	head->prefix[i] = INT_MAX;
+	head->nexts[i].nxt = tail;
+	head->nexts[i].prefix = INT_MAX;
   }
 }
 
@@ -42,10 +42,10 @@ int SkipList::findNode(int key, node* preds[], node* succs[]) {
   int lFound = -1;
   node* pred = head;
   for (int level = max_level-1; level >= 0; level--) {
-	node* curr = pred->next[level];
-	while (key > pred->prefix[level]) {
+	node* curr = pred->nexts[level].nxt;
+	while (key > pred->nexts[level].prefix) {
 	  pred = curr; 
-	  curr = pred->next[level];
+	  curr = pred->nexts[level].nxt;
 	}
 	if (lFound == -1 && key == curr->key) {
 	  lFound = level;
@@ -118,10 +118,10 @@ int SkipList::insert(int key) {
   int topLevel = randomLevel(max_level, probability);
   add->topLevel = topLevel+1;
   for (int i = 0; i <= topLevel; i++) {
-	add->next[i] = succs[i];
-	add->prefix[i] = succs[i]->key;
-	preds[i]->next[i] = add;
-	preds[i]->prefix[i] = key;
+	add->nexts[i].nxt = succs[i];
+	add->nexts[i].prefix = succs[i]->key;
+	preds[i]->nexts[i].nxt = add;
+	preds[i]->nexts[i].prefix = key;
   }
   return 1;
 }
@@ -132,7 +132,7 @@ void SkipList::print_skiplist() {
   while (ptr != 0) {
 	printf("[N:%04d K:%04d ML:%d]  ", i, ptr->key, ptr->topLevel);
 	i++;
-	ptr = ptr->next[0];
+	ptr = ptr->nexts[0].nxt;
   }
 }
 
@@ -163,10 +163,10 @@ void SkipList::pretty_print_skiplist() {
 	}
 	printf("\n");
 	for (int i = 0; i < ptr->topLevel; i++) {
-	  if (ptr->prefix[i] == INT_MAX) {
+	  if (ptr->nexts[i].prefix == INT_MAX) {
 		printf("[P:ND] ");
 	  } else {
-		printf("[P:%02d] ", ptr->prefix[i]);
+		printf("[P:%02d] ", ptr->nexts[i].prefix);
 	  }
 	}
 	for (int i = ptr->topLevel; i < MAX_LEVEL; i++) {
@@ -177,7 +177,7 @@ void SkipList::pretty_print_skiplist() {
 	  printf("   |   ");
 	}
 	printf ("\n");
-	ptr = ptr->next[0];
+	ptr = ptr->nexts[0].nxt;
   }
 }
 

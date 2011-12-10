@@ -18,7 +18,13 @@ def one(datafile, fanout):
             for v in var:
                 pair = v.split(':')
                 key = pair[0].lstrip().rstrip()
-                val = int(pair[1].lstrip().rstrip())
+                try:
+                    val = int(pair[1].lstrip().rstrip())
+                except (IndexError):
+                    print "Error in output! "
+                    print "datafile: %s, fanout: %d" % (datafile, fanout)
+                    print t
+                    return
                 if d.has_key(key):
                     d[key] = d[key] + val
                 else:

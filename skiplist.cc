@@ -16,9 +16,9 @@ SkipList::SkipList(int prob, int maxl) {
   if (max_level == 0) max_level = 1;
   if (max_level > MAX_LEVEL) max_level = MAX_LEVEL;
   head->key = -1;
-  head->topLevel = maxl;
+  head->topLevel = max_level;
   tail->key = INT_MAX;
-  tail->topLevel = maxl;
+  tail->topLevel = max_level;
   for (int i = 0; i < MAX_LEVEL; i++) {
 	head->nexts[i].nxt = tail;
 	head->nexts[i].prefix = INT_MAX;
@@ -79,19 +79,28 @@ int randomLevel(int max, int probability) {
 	toplayer = max;
   return toplayer;
 }
+// array laid out [ 0   1     2   ..
+// array laid out [ top top-1 top-2
+int alevel(int logical_level, node* node) {
+  int actual_level = node->topLevel - 1 - logical_level;
+  return actual_level;
+}
 
 int SkipList::findNode(int key, node* preds[], node* succs[]) {
   int lFound = -1;
   node* pred = head;
+  // no no no
   for (int level = pred->topLevel-1; level >= 0; level--) {
-	node* curr = pred->nexts[level].nxt;
-	while (key > pred->nexts[level].prefix) {
+	node* curr = pred->nexts[alevel(level, pred)].nxt;
+	while (key > pred->nexts[alevel(level, pred)].prefix) {
+	  int idx = alevel(level, curr);
 	  pred = curr; 
-	  curr = pred->nexts[level].nxt;
+	  curr = pred->nexts[idx].nxt;
 	}
 	if (lFound == -1 && key == curr->key) {
 	  lFound = level;
 	}
+	// reversed for ease
 	preds[level] = pred;
 	succs[level] = curr;
   }
@@ -110,10 +119,10 @@ int SkipList::insert(int key) {
   int topLevel = randomLevel(max_level, probability);
   add->topLevel = topLevel;
   for (int i = 0; i < topLevel; i++) {
-	add->nexts[i].nxt = succs[i];
-	add->nexts[i].prefix = succs[i]->key;
-	preds[i]->nexts[i].nxt = add;
-	preds[i]->nexts[i].prefix = key;
+	add->nexts[alevel(i, add)].nxt = succs[i];
+	add->nexts[alevel(i, add)].prefix = succs[i]->key;
+	preds[i]->nexts[alevel(i, preds[i])].nxt = add;
+	preds[i]->nexts[alevel(i, preds[i])].prefix = key;
   }
   return 1;
 }

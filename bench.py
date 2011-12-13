@@ -36,7 +36,7 @@ if __name__ == "__main__":
     datadir = time.strftime("%Y-%m-%d.%H:%M:%S", time.localtime())
     os.system("mkdir graphs/%s" % datadir)
     os.system("cp graphs/plain.gp graphs/%s/plain.gp" % datadir)
-    for f in (2, 4):
+    for f in (2, 4, 8):
         datafile = "graphs/"+datadir+"/plain.dat%d" % f
         one(datafile, f)
     os.system("cd graphs/%s && ./plain.gp && cd ../.. && evince graphs/%s/plain.pdf &" % (datadir, datadir))

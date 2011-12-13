@@ -82,6 +82,7 @@ int randomLevel(int max, int probability) {
 // array laid out [ 0   1     2   ..
 // array laid out [ top top-1 top-2
 int alevel(int logical_level, node* node) {
+  assert(logical_level < node->topLevel);
   int actual_level = node->topLevel - 1 - logical_level;
   return actual_level;
 }
@@ -91,8 +92,9 @@ int SkipList::findNode(int key, node* preds[], node* succs[]) {
   node* pred = head;
   // no no no
   for (int level = pred->topLevel-1; level >= 0; level--) {
-	node* curr = pred->nexts[alevel(level, pred)].nxt;
-	while (key > pred->nexts[alevel(level, pred)].prefix) {
+	//	node* curr = pred->nexts[alevel(level, pred)].nxt;
+	node* curr = pred->nn(level)->nxt;
+	while (key > pred->nn(level)->prefix) {
 	  int idx = alevel(level, curr);
 	  pred = curr; 
 	  curr = pred->nexts[idx].nxt;
@@ -119,10 +121,10 @@ int SkipList::insert(int key) {
   int topLevel = randomLevel(max_level, probability);
   add->topLevel = topLevel;
   for (int i = 0; i < topLevel; i++) {
-	add->nexts[alevel(i, add)].nxt = succs[i];
-	add->nexts[alevel(i, add)].prefix = succs[i]->key;
-	preds[i]->nexts[alevel(i, preds[i])].nxt = add;
-	preds[i]->nexts[alevel(i, preds[i])].prefix = key;
+	add->nn(i)->nxt = succs[i];
+	add->nn(i)->prefix = succs[i]->key;
+	preds[i]->nn(i)->nxt = add;
+	preds[i]->nn(i)->prefix = key;
   }
   return 1;
 }
@@ -133,7 +135,7 @@ void SkipList::print_skiplist() {
   while (ptr != 0) {
 	printf("[N:%04d K:%04d ML:%d]  ", i, ptr->key, ptr->topLevel);
 	i++;
-	ptr = ptr->nexts[0].nxt;
+	ptr = ptr->nn(i)->nxt;
   }
 }
 
@@ -164,10 +166,10 @@ void SkipList::pretty_print_skiplist() {
 	}
 	printf("\n");
 	for (int i = 0; i < ptr->topLevel; i++) {
-	  if (ptr->nexts[i].prefix == INT_MAX) {
+	  if (ptr->nn(i)->prefix == INT_MAX) {
 		printf("[P:ND] ");
 	  } else {
-		printf("[P:%02d] ", ptr->nexts[i].prefix);
+		printf("[P:%02d] ", ptr->nn(i)->prefix);
 	  }
 	}
 	for (int i = ptr->topLevel; i < max_level; i++) {
@@ -178,7 +180,7 @@ void SkipList::pretty_print_skiplist() {
 	  printf("   |   ");
 	}
 	printf ("\n");
-	ptr = ptr->nexts[0].nxt;
+	ptr = ptr->nn(0)->nxt;
   }
 }
 
@@ -219,8 +221,36 @@ void basic_test() {
 	printf("Error lookup: %d\n", 2000);
 	error = 1;
   }
-  if (!error) 
+  SkipList* sk2 = new SkipList(2, 4);
+  for (int i = 0; i < 20; i+=4) {
+	if (sk2->insert(i) <= 0)  {
+	  printf("Error making small list: %d\n", i);
+	  error = 1;
+	}
+  }
+  for (int i = 1; i < 30; i+=5) {
+	if (sk2->insert(i) <=0 && i%4 != 0) {
+	  printf("Error making small list: %d\n", i);
+	  error = 1;
+	}
+  }
+  for (int i = 26; i >= 1; i-=5) {
+	if (sk2->lookup(i) != 1) {
+	  printf("Error lookup by 5 in small list: %d\n", i);
+	  error = 1;	  
+	}
+  }
+  for (int i = 16; i >= 0; i-=4) {
+	if (sk2->lookup(i) != 1) {
+	  printf("Error lookup by 4 in small list: %d\n", i);
+	  error = 1;	  
+	}
+  }
+  if (!error) {
 	printf("PASSED\n");
+  } else {
+	sk2->pretty_print_skiplist();
+  }
 }
 
 int main(int argc, char** argv) {

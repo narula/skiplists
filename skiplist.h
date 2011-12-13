@@ -10,6 +10,9 @@ struct node {
   int key;
   int topLevel;
   struct next nexts[MAX_LEVEL];
+  next* nn(int level) {
+	return &(nexts[topLevel - 1 - level]);
+  }
 };
 
 class SkipList {

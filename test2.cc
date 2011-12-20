@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <math.h>
 
-#define MAX_LEVELS 3
+#define MAX_LEVELS 4
 
 struct next {
   int prefix;

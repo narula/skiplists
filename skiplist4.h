@@ -1,5 +1,6 @@
+// Hacked up, read-only fast skiplist by 4 with no inserts.
 
-#define MAX_LEVEL 4
+#define MAX_LEVEL 20
 
 struct next4 {
   int prefix;
@@ -9,11 +10,10 @@ struct next4 {
 struct node4 {
   int key;
   int topLevel;
-  struct next4 nexts[4][MAX_LEVEL];
-  next4* nn(int level, int ptr) {
-	return &(nexts[ptr][level]);
-	//	return &(nexts[ptr][topLevel - 1 - level]);
-  }
+
+  // 4 total pointers.  nexts[3] is the traditional one in a skiplist.
+  // the other ones point inside.
+  struct next4 nexts[MAX_LEVEL][4];
 };
 
 class SkipList4 {
@@ -23,9 +23,8 @@ class SkipList4 {
   ~SkipList4();
 
   int lookup(int key);
-  int insert(int key);
 
-  void print_skiplist();
+  void printlist();
   void pretty_print_skiplist();
   node4* head;
   node4* tail;
@@ -33,8 +32,8 @@ class SkipList4 {
   int max_level;
 
 
-  static SkipList4* init_list(int sz);
+  static SkipList4* init_list(int sz, int maxl);
 
  private:
-  int findNode(int key, node4* preds[], node4* succs[]);
+  int findNode(int key, node4* preds[][4], node4* succs[][4]);
 };

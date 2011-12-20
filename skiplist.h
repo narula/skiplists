@@ -1,3 +1,6 @@
+// Proper read/write non-concurrent skiplist, can change the base for
+// levels.
+// ./skiplist size base
 
 #define MAX_LEVEL 20
 

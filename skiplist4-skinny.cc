@@ -1,4 +1,4 @@
-#include "skiplist4.h"
+#include "skiplist4-skinny.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -8,67 +8,59 @@
 #include <math.h>
 
 
-SkipList4::SkipList4() {
-  count = 0;
-  pointer_follows = 0;
+SkipList4Skinny::SkipList4Skinny() {
 }
 
-SkipList4::SkipList4(int prob, int maxl) {
+SkipList4Skinny::SkipList4Skinny(int prob, int maxl) {
   probability = prob;
   max_level = maxl;
   if (max_level == 0) max_level = 1;
   if (max_level > MAX_LEVEL) max_level = MAX_LEVEL;
 }
 
-SkipList4::~SkipList4() {
+SkipList4Skinny::~SkipList4Skinny() {
   if (head) delete head;
   if (tail) delete tail;
 }
 
-int SkipList4::lookup(int key) {
-  node4* preds[max_level][4];
-  node4* succs[max_level][4];
-  if (findNode(key, preds, succs) >= 0) {
+int SkipList4Skinny::lookup(int key) {
+  if (findNode(key) >= 0) {
 	return 1;
   } else {
 	return 0;
   }
 }
 
-int SkipList4::findNode(int key, node4* preds[][4], node4* succs[][4]) {
+int SkipList4Skinny::findNode(int key) {
   int lFound = -1;
   node4* pred = head;
-  for (int level = pred->topLevel-1; level >= 0; level--) {
+  while (pred->down != NULL) {
 	node4* curr;
 	node4* tmp;
 	int top = 3;
-	if (level == 0) top = 0;
-	curr = pred->nexts[level][top].nxt;
-	while (key > pred->nexts[level][top].prefix) {
+	curr = pred->nexts[top].nxt;
+	while (key > pred->nexts[top].prefix) {
 	  tmp = pred;
 	  pred = curr;
-	  curr = pred->nexts[level][top].nxt;
-	  inc();
+	  curr = pred->nexts[top].nxt;
 	}
 	if (lFound == -1 && key == curr->key) {
 	  lFound = level;
 	}
-	preds[level][top] = pred;
-	succs[level][top] = curr;
-
 	int k = 0;
-	while (key > pred->nexts[level][k].prefix) {
+	while (key > pred->nexts[k].prefix) {
 	  k++;
 	}
 	assert(k < 4);
 	if (lFound == -1 && key == curr->key) {
 	  lFound = level;
 	}
+	
   }
   return lFound;
 }
 
-SkipList4* SkipList4::init_list(int sz, int max_level) {
+SkipList4Skinny* SkipList4Skinny::init_list(int sz, int max_level) {
   node4** sk;
   sk = new node4* [(unsigned long long)sz+2];
   for (int i = 0; i < sz+2; i++) {
@@ -155,24 +147,24 @@ SkipList4* SkipList4::init_list(int sz, int max_level) {
   }
 
 
-  SkipList4* sk4 = new SkipList4;
+  SkipList4Skinny* sk4 = new SkipList4Skinny;
   sk4->head = sk[0];
   sk4->tail = sk[sz+1];
   sk4->max_level = max_level;
   return sk4;
 }
 
-int basic_test(SkipList4* sk) {
+int basic_test(SkipList4Skinny* sk) {
   assert (sk->lookup(5) > 0);
   assert (sk->lookup(99) <= 0);
   printf("PASSED\n");
 }
 
-void SkipList4::printlist() {
+void SkipList4Skinny::printlist() {
   node4* ptr = head;
   while (ptr != tail) {
 	printf("[K:%02d ", ptr->key);
-	printf("N: %02d ", ptr->nexts[0][0].nxt->key);
+	printf("N: %02d ", ptr->nexts[0].nxt->key);
 	for (int j = 1; j < ptr->topLevel; j++) {
 	  printf("N: ");
 	  for (int k = 0; k < 4; k++) {
@@ -185,7 +177,7 @@ void SkipList4::printlist() {
   printf("]\n");
 }
 
-void SkipList4::pretty_print_skiplist() {
+void SkipList4Skinny::pretty_print_skiplist() {
   node4* ptr = head;
   while (ptr != 0) {
 	if (ptr != head) {
@@ -239,25 +231,21 @@ int main(int argc, char** argv) {
   int LIST_SIZE = atoi(argv[1]);
   int ITERATIONS = 10000;
   int maxl = floor(log(LIST_SIZE)/log(4))+1;
-  SkipList4* stest2 = SkipList4::init_list(LIST_SIZE, maxl);
+  SkipList4Skinny* stest2 = SkipList4Skinny::init_list(LIST_SIZE, maxl);
   assert(stest2);
   if (LIST_SIZE < 99) {
 	//stest2->printlist();
 	basic_test(stest2);
 	stest2->pretty_print_skiplist();
   }
-  stest2->enable_counts();
   timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   time_t start = ts.tv_sec*1000000000 + ts.tv_nsec;
   for (int i = 0; i < ITERATIONS; i++) {
-	int key = (rand() % LIST_SIZE);
-	if (ITERATIONS < 50) printf("key: %d\n", key);
-	stest2->lookup(key);
+	stest2->lookup(rand() % LIST_SIZE);
   }
   clock_gettime(CLOCK_MONOTONIC, &ts);
-  stest2->disable_counts();
   time_t lookup_time = ts.tv_sec*1000000000 + ts.tv_nsec;
-  printf("lookup: %ld; itr: %d; size: %d; levels: %d; probability: %d; ptr: %d\n", 
-		 (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE, maxl, 4, stest2->get_ptr_count());
+  printf("lookup: %ld; itr: %d; size: %d; levels: %d; probability: %d\n", 
+		 (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE, maxl, 4);
 }

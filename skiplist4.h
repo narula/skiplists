@@ -23,6 +23,10 @@ class SkipList4 {
   ~SkipList4();
 
   int lookup(int key);
+  void enable_counts() { count = 1; };
+  void disable_counts() { count = 0; } ;
+  void inc() { if (count == 1) pointer_follows++; };
+  int get_ptr_count() { return pointer_follows; };
 
   void printlist();
   void pretty_print_skiplist();
@@ -36,4 +40,6 @@ class SkipList4 {
 
  private:
   int findNode(int key, node4* preds[][4], node4* succs[][4]);
+  int pointer_follows;
+  int count;
 };

@@ -14,7 +14,8 @@ struct node {
   int topLevel;
   struct next nexts[MAX_LEVEL];
   next* nn(int level) {
-	return &(nexts[topLevel - 1 - level]);
+	//	return &(nexts[topLevel - 1 - level]);
+	return &(nexts[level]);
   }
 };
 
@@ -28,6 +29,10 @@ class SkipList {
 
   void print_skiplist();
   void pretty_print_skiplist();
+  void enable_counts() { count = 1; };
+  void disable_counts() { count = 0; } ;
+  void inc() { if (count == 1) pointer_follows++; };
+  int get_ptr_count() { return pointer_follows; };
 
   static SkipList* init_list(int sz, int high, int probability);
 
@@ -37,4 +42,6 @@ class SkipList {
   node* tail;
   int probability;
   int max_level;
+  int pointer_follows;
+  int count;
 };

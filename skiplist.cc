@@ -23,6 +23,8 @@ SkipList::SkipList(int prob, int maxl) {
 	head->nexts[i].nxt = tail;
 	head->nexts[i].prefix = INT_MAX;
   }
+  count = 0;
+  pointer_follows = 0;
 }
 
 SkipList::~SkipList() {
@@ -84,20 +86,24 @@ int randomLevel(int max, int probability) {
 int alevel(int logical_level, node* node) {
   assert(logical_level < node->topLevel);
   int actual_level = node->topLevel - 1 - logical_level;
-  return actual_level;
+  //return actual_level;
+  return logical_level;
 }
 
 int SkipList::findNode(int key, node* preds[], node* succs[]) {
   int lFound = -1;
   node* pred = head;
-  // no no no
+  inc();
   for (int level = pred->topLevel-1; level >= 0; level--) {
-	//	node* curr = pred->nexts[alevel(level, pred)].nxt;
 	node* curr = pred->nn(level)->nxt;
-	while (key > pred->nn(level)->prefix) {
+	//	while (key > pred->nn(level)->prefix) {
+	int nxt_key = pred->nn(level)->prefix;
+	while (key > nxt_key) {
 	  int idx = alevel(level, curr);
 	  pred = curr; 
 	  curr = pred->nexts[idx].nxt;
+	  inc();
+	  nxt_key = pred->nn(level)->prefix;
 	}
 	if (lFound == -1 && key == curr->key) {
 	  lFound = level;
@@ -270,21 +276,25 @@ int main(int argc, char** argv) {
   if (LIST_SIZE < 100) {
 	stest2->pretty_print_skiplist();
   }
+  stest2->enable_counts();
   clock_gettime(CLOCK_MONOTONIC, &ts);
   time_t start = ts.tv_sec*1000000000 + ts.tv_nsec;
   for (int i = 0; i < ITERATIONS; i++) {
-	stest2->lookup(rand() % POOL);
+	int key = (rand() % POOL);
+	if (ITERATIONS < 50) printf("key: %d\n", key);
+	stest2->lookup(key);
   }
   clock_gettime(CLOCK_MONOTONIC, &ts);
   time_t lookup_time = ts.tv_sec*1000000000 + ts.tv_nsec;
+  stest2->disable_counts();
   for (int i = LIST_SIZE; i < LIST_SIZE+ITERATIONS; i++) {
 	stest2->insert(rand() % POOL);
   }
   clock_gettime(CLOCK_MONOTONIC, &ts);
   time_t insert_time = ts.tv_sec*1000000000 + ts.tv_nsec;
 
-  printf("insert: %ld; lookup: %ld; itr: %d; size: %d; levels: %d; probability: %d\n", 
-		 (insert_time-lookup_time)/(ITERATIONS), (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE, int(floor(log(LIST_SIZE)/log(PROBABILITY))), PROBABILITY);
+  printf("insert: %ld; lookup: %ld; itr: %d; size: %d; levels: %d; probability: %d; ptr: %d\n", 
+		 (insert_time-lookup_time)/(ITERATIONS), (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE, int(floor(log(LIST_SIZE)/log(PROBABILITY))), PROBABILITY, stest2->get_ptr_count());
 }
 
 

@@ -1,6 +1,6 @@
 // Hacked up, read-only fast skiplist by 2 with no inserts.
 
-#define MAX_LEVEL 30
+#define MAX_LEVEL 27
 
 struct next2 {
   int prefix;
@@ -21,6 +21,10 @@ class SkipList2 {
   ~SkipList2();
 
   int lookup(int key);
+  void enable_counts() { count = 1; };
+  void disable_counts() { count = 0; } ;
+  void inc() { if (count == 1) pointer_follows++; };
+  int get_ptr_count() { return pointer_follows; };
 
   void printlist();
   void pretty_print_skiplist();
@@ -34,4 +38,6 @@ class SkipList2 {
 
  private:
   int findNode(int key, node2* preds[], node2* succs[]);
+  int pointer_follows;
+  int count;
 };

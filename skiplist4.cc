@@ -26,16 +26,14 @@ SkipList4::~SkipList4() {
 }
 
 int SkipList4::lookup(int key) {
-  node4* preds[max_level][4];
-  node4* succs[max_level][4];
-  if (findNode(key, preds, succs) >= 0) {
+  if (findNode(key) >= 0) {
 	return 1;
   } else {
 	return 0;
   }
 }
 
-int SkipList4::findNode(int key, node4* preds[][4], node4* succs[][4]) {
+int SkipList4::findNode(int key) {
   int lFound = -1;
   node4* pred = head;
   for (int level = pred->topLevel-1; level >= 0; level--) {
@@ -58,6 +56,7 @@ int SkipList4::findNode(int key, node4* preds[][4], node4* succs[][4]) {
 	assert(k < 4);
 	if (k != 0) {
 	  pred = pred->nexts[level][k-1].nxt;
+	  inc();
 	}
 	if (lFound == -1 && key == pred->key) {
 	  return level;
@@ -240,7 +239,6 @@ int main(int argc, char** argv) {
   SkipList4* stest2 = SkipList4::init_list(LIST_SIZE, maxl);
   assert(stest2);
   if (LIST_SIZE < 99) {
-	//stest2->printlist();
 	basic_test(stest2);
 	stest2->pretty_print_skiplist();
   }

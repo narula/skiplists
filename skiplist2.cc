@@ -44,6 +44,7 @@ int SkipList2::findNode(int key, node2* preds[], node2* succs[]) {
 	  tmp = pred;
 	  pred = curr;
 	  curr = pred->nexts[level].nxt;
+	  inc();
 	}
 	if (lFound == -1 && key == curr->key) {
 	  lFound = level;
@@ -215,6 +216,7 @@ int main(int argc, char** argv) {
 	basic_test(stest2);
 	stest2->pretty_print_skiplist();
   }
+  stest2->enable_counts();
   timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   time_t start = ts.tv_sec*1000000000 + ts.tv_nsec;
@@ -222,7 +224,8 @@ int main(int argc, char** argv) {
 	stest2->lookup(rand() % LIST_SIZE);
   }
   clock_gettime(CLOCK_MONOTONIC, &ts);
+  stest2->disable_counts();
   time_t lookup_time = ts.tv_sec*1000000000 + ts.tv_nsec;
-  printf("lookup: %ld; itr: %d; size: %d; levels: %d; probability: %d\n", 
-		 (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE, maxl, 2);
+  printf("lookup: %ld; itr: %d; size: %d; levels: %d; probability: %d; ptr: %d\n", 
+		 (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE, maxl, 2, stest2->get_ptr_count());
 }

@@ -39,7 +39,7 @@ class SkipList4 {
   static SkipList4* init_list(int sz, int maxl);
 
  private:
-  int findNode(int key, node4* preds[][4], node4* succs[][4]);
+  int findNode(int key);
   int pointer_follows;
   int count;
 };

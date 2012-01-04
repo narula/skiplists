@@ -3,6 +3,8 @@
 *.pdf
 notes.txt
 graphs/2011-*
+graphs/2012-*
+graphs/*-2012-*
 skiplist
 skiplist4
 test2

@@ -40,29 +40,29 @@ int SkipList4::findNode(int key, node4* preds[][4], node4* succs[][4]) {
   node4* pred = head;
   for (int level = pred->topLevel-1; level >= 0; level--) {
 	node4* curr;
-	node4* tmp;
 	int top = 3;
 	if (level == 0) top = 0;
 	curr = pred->nexts[level][top].nxt;
 	while (key > pred->nexts[level][top].prefix) {
-	  tmp = pred;
 	  pred = curr;
 	  curr = pred->nexts[level][top].nxt;
 	  inc();
 	}
 	if (lFound == -1 && key == curr->key) {
-	  lFound = level;
+	  return level;
 	}
-	preds[level][top] = pred;
-	succs[level][top] = curr;
 
+	// pred.key is less than key, curr.key is greater than key.
 	int k = 0;
 	while (key > pred->nexts[level][k].prefix) {
 	  k++;
 	}
 	assert(k < 4);
-	if (lFound == -1 && key == curr->key) {
-	  lFound = level;
+	if (k != 0) {
+	  pred = pred->nexts[level][k-1].nxt;
+	}
+	if (lFound == -1 && key == pred->key) {
+	  return level;
 	}
   }
   return lFound;

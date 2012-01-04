@@ -1,6 +1,6 @@
 // Hacked up, read-only fast skiplist by 4 with no inserts.
 
-#define MAX_LEVEL 30
+#define MAX_LEVEL 13
 
 struct next4 {
   int prefix;

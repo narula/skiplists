@@ -40,12 +40,10 @@ int SkipList4::findNode(int key, node4* preds[][4], node4* succs[][4]) {
   node4* pred = head;
   for (int level = pred->topLevel-1; level >= 0; level--) {
 	node4* curr;
-	int top = 3;
-	if (level == 0) top = 0;
-	curr = pred->nexts[level][top].nxt;
-	while (key > pred->nexts[level][top].prefix) {
+	curr = pred->nexts[level][3].nxt;
+	while (key > pred->nexts[level][3].prefix) {
 	  pred = curr;
-	  curr = pred->nexts[level][top].nxt;
+	  curr = pred->nexts[level][3].nxt;
 	  inc();
 	}
 	if (lFound == -1 && key == curr->key) {
@@ -112,8 +110,8 @@ SkipList4* SkipList4::init_list(int sz, int max_level) {
 	  np = INT_MAX;
 	  nptr = sk[sz+1];
 	}
-	sk[i]->nexts[0][0].prefix = np;
-	sk[i]->nexts[0][0].nxt = nptr;
+	sk[i]->nexts[0][3].prefix = np;
+	sk[i]->nexts[0][3].nxt = nptr;
 
 	for (int j = 1; j < sk[i]->topLevel; j++) {
 	  for (int k = 0; k < 4; k++) {
@@ -211,7 +209,7 @@ void SkipList4::pretty_print_skiplist() {
 	  printf("   |   ");
 	}
 	printf("\n");
-	printf("[P:%02d] ", ptr->nexts[0][0].prefix);
+	printf("[P:%02d] ", ptr->nexts[0][3].prefix);
 	
 	for (int i = 1; i < ptr->topLevel; i++) {
 	  printf("[P:");
@@ -230,7 +228,7 @@ void SkipList4::pretty_print_skiplist() {
 	  printf("   |   ");
 	}
 	printf ("\n");
-	ptr = ptr->nexts[0,0]->nxt;
+	ptr = ptr->nexts[0][3].nxt;
   }
 }
 

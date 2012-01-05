@@ -6,6 +6,7 @@ graphs/2011-*
 graphs/2012-*
 graphs/*-2012-*
 skiplist
+skiplist2
 skiplist4
 test2
 rtm.c

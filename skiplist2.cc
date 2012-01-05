@@ -34,7 +34,6 @@ int SkipList2::lookup(int key) {
 }
 
 int SkipList2::findNode(int key, node2* preds[], node2* succs[]) {
-  int lFound = -1;
   node2* pred = head;
   for (int level = pred->topLevel-1; level >= 0; level--) {
 	node2* tmp;
@@ -46,11 +45,11 @@ int SkipList2::findNode(int key, node2* preds[], node2* succs[]) {
 	  curr = pred->nexts[level].nxt;
 	  inc();
 	}
-	if (lFound == -1 && key == curr->key) {
-	  lFound = level;
+	if (key == pred->nexts[level].prefix) {
+	  return level;
 	}
   }
-  return lFound;
+  return -1;
 }
 
 SkipList2* SkipList2::init_list(int sz, int max_level) {

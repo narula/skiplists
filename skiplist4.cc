@@ -34,7 +34,6 @@ int SkipList4::lookup(int key) {
 }
 
 int SkipList4::findNode(int key) {
-  int lFound = -1;
   node4* pred = head;
   for (int level = pred->topLevel-1; level >= 0; level--) {
 	node4* curr;
@@ -44,25 +43,25 @@ int SkipList4::findNode(int key) {
 	  curr = pred->nexts[level][3].nxt;
 	  inc();
 	}
-	if (lFound == -1 && key == curr->key) {
+	if (key == pred->nexts[level][3].prefix) {
 	  return level;
 	}
 
 	// pred.key is less than key, curr.key is greater than key.
 	int k = 0;
-	while (key > pred->nexts[level][k].prefix) {
+	while (key >= pred->nexts[level][k].prefix) {
 	  k++;
 	}
 	assert(k < 4);
 	if (k != 0) {
+	  if (key == pred->nexts[level][k-1].prefix) {
+		return level;
+	  }
 	  pred = pred->nexts[level][k-1].nxt;
 	  inc();
 	}
-	if (lFound == -1 && key == pred->key) {
-	  return level;
-	}
   }
-  return lFound;
+  return -1;
 }
 
 SkipList4* SkipList4::init_list(int sz, int max_level) {

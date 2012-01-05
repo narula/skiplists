@@ -33,9 +33,7 @@ SkipList::~SkipList() {
 }
 
 int SkipList::lookup(int key) {
-  node* preds[max_level];
-  node* succs[max_level];
-  if (findNode(key, preds, succs) >= 0) {
+  if (findNodeFast(key) >= 0) {
 	return 1;
   } else {
 	return 0;
@@ -81,13 +79,22 @@ int randomLevel(int max, int probability) {
 	toplayer = max;
   return toplayer;
 }
-// array laid out [ 0   1     2   ..
-// array laid out [ top top-1 top-2
-int alevel(int logical_level, node* node) {
-  assert(logical_level < node->topLevel);
-  int actual_level = node->topLevel - 1 - logical_level;
-  //return actual_level;
-  return logical_level;
+
+int SkipList::findNodeFast(int key) {
+  node* pred = head;
+  inc();
+  for (int level = pred->topLevel-1; level >= 0; level--) {
+	node* curr = pred->nexts[level].nxt;
+	while (key > pred->nexts[level].prefix) {
+	  pred = curr; 
+	  curr = pred->nexts[level].nxt;
+	  inc();
+	}
+	if (key == pred->nexts[level].prefix) {
+	  return level;
+	}
+  }
+  return -1;
 }
 
 int SkipList::findNode(int key, node* preds[], node* succs[]) {
@@ -95,20 +102,15 @@ int SkipList::findNode(int key, node* preds[], node* succs[]) {
   node* pred = head;
   inc();
   for (int level = pred->topLevel-1; level >= 0; level--) {
-	node* curr = pred->nn(level)->nxt;
-	//	while (key > pred->nn(level)->prefix) {
-	int nxt_key = pred->nn(level)->prefix;
-	while (key > nxt_key) {
-	  int idx = alevel(level, curr);
+	node* curr = pred->nexts[level].nxt;
+	while (key > pred->nexts[level].prefix) {
 	  pred = curr; 
-	  curr = pred->nexts[idx].nxt;
+	  curr = pred->nexts[level].nxt;
 	  inc();
-	  nxt_key = pred->nn(level)->prefix;
 	}
-	if (lFound == -1 && key == nxt_key) {
+	if (lFound == -1 && key == pred->nexts[level].prefix) {
 	  lFound = level;
 	}
-	// reversed for ease
 	preds[level] = pred;
 	succs[level] = curr;
   }

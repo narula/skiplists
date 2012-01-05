@@ -38,6 +38,7 @@ class SkipList {
 
  private:
   int findNode(int key, node* preds[], node* succs[]);
+  int findNodeFast(int key);
   node* head;
   node* tail;
   int probability;

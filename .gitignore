@@ -8,5 +8,6 @@ graphs/*-2012-*
 skiplist
 skiplist2
 skiplist4
+skiplist-f
 test2
 rtm.c

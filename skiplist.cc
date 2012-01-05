@@ -105,7 +105,7 @@ int SkipList::findNode(int key, node* preds[], node* succs[]) {
 	  inc();
 	  nxt_key = pred->nn(level)->prefix;
 	}
-	if (lFound == -1 && key == curr->key) {
+	if (lFound == -1 && key == nxt_key) {
 	  lFound = level;
 	}
 	// reversed for ease

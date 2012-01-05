@@ -160,6 +160,7 @@ SkipList4* SkipList4::init_list(int sz, int max_level) {
 
 int basic_test(SkipList4* sk) {
   assert (sk->lookup(5) > 0);
+  assert (sk->lookup(0) > 0);
   assert (sk->lookup(99) <= 0);
   printf("PASSED\n");
 }
@@ -207,11 +208,10 @@ void SkipList4::pretty_print_skiplist() {
 	  printf("   |   ");
 	}
 	printf("\n");
-	printf("[P:%02d] ", ptr->nexts[0][3].prefix);
 	
-	for (int i = 1; i < ptr->topLevel; i++) {
+	for (int i = 0; i < ptr->topLevel; i++) {
 	  printf("[P:");
-	  if (ptr->nexts[i, 3]->prefix == INT_MAX) {
+	  if (ptr->nexts[i][3].prefix == INT_MAX) {
 		printf("ND");
 	  } else {		
 		printf("%02d", ptr->nexts[i][3].prefix);

@@ -13,7 +13,7 @@ struct node {
   int topLevel;
 
   // FANOUT total pointers.  nexts[FANOUT-1] is the traditional one in
-  // a skiplist.the other ones point inside.
+  // a skiplist.  the other ones point inside.
   struct next nexts[MAX_LEVEL][FANOUT];
 };
 
@@ -24,6 +24,7 @@ class SkipList {
   ~SkipList();
 
   int lookup(int key);
+  int insert(int key);
   void enable_counts() { count = 1; };
   void disable_counts() { count = 0; } ;
   void inc() { if (count == 1) pointer_follows++; };
@@ -40,7 +41,7 @@ class SkipList {
   static SkipList* init_list(int sz, int maxl);
 
  private:
-  int findNode(int key);
+  int findNode(int key, node* preds[][FANOUT], node* succs[][FANOUT]);
   int pointer_follows;
   int count;
 };

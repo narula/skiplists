@@ -26,15 +26,51 @@ SkipList::~SkipList() {
 }
 
 int SkipList::lookup(int key) {
-  if (findNode(key) >= 0) {
+  node *preds[max_level][FANOUT], *succs[max_level][FANOUT];
+  if (findNode(key, preds, succs) >= 0) {
 	return 1;
   } else {
 	return 0;
   }
 }
 
-int SkipList::findNode(int key) {
+int randomLevel(int max) {
+  unsigned long long x = rand();
+  int toplayer = 1;
+  switch (FANOUT) {
+  case 4:
+	while((x & 3) == 3){
+	  toplayer += 1;
+	  x >>= 2;
+	}
+	break;
+  case 8:
+	while((x & 7) == 7){
+	  toplayer += 1;
+	  x >>= 3;
+	}
+	break;
+  case 16:
+	while((x & 15) == 15){
+	  toplayer += 1;
+	  x >>= 4;
+	}
+	break;
+  default:
+	while((x & 1) != 0) {
+	  toplayer += 1;
+	  x >>= 1;
+	}
+	break;
+  }
+  if(toplayer > max)
+	toplayer = max;
+  return toplayer;
+}
+
+int SkipList::findNode(int key, node* preds[][FANOUT], node* succs[][FANOUT]) {
   node* pred = head;
+  int lFound = -1;
   for (int level = pred->topLevel-1; level >= 0; level--) {
 	node* curr;
 	curr = pred->nexts[level][FANOUT-1].nxt;
@@ -43,25 +79,71 @@ int SkipList::findNode(int key) {
 	  curr = pred->nexts[level][FANOUT-1].nxt;
 	  inc();
 	}
-	if (key == pred->nexts[level][FANOUT-1].prefix) {
-	  return level;
+	preds[level][FANOUT-1] = pred;
+	succs[level][FANOUT-1] = curr;
+	if (lFound == -1 && key == pred->nexts[level][FANOUT-1].prefix) {
+	  lFound = level;
+	  continue;
 	}
 
 	// pred.key is less than key, curr.key is greater than key.
 	int k = 0;
-	while (key >= pred->nexts[level][k].prefix) {
+	while (key > pred->nexts[level][k].prefix) {
 	  k++;
 	}
-	assert(k < FANOUT);
+	//assert(k < FANOUT);
 	if (k != 0) {
-	  if (key == pred->nexts[level][k-1].prefix) {
-		return level;
+	  if (lFound == -1 && key == pred->nexts[level][k-1].prefix) {
+		lFound = level;
 	  }
 	  pred = pred->nexts[level][k-1].nxt;
 	  inc();
 	}
+	// for (int k = 0; k < FANOUT; k++) {
+	//   if (pred->nexts[level][k].nxt == NULL) {
+	// 	continue;
+	//   }
+	//   if (key >= pred->nexts[level][k].prefix) {
+	// 	//		preds[level][k] = pred->nexts[level][k].nxt;
+	// 	continue;
+	//   } else {
+	// 	if (k != 0) {
+	// 	  if (lFound == -1 && key == pred->nexts[level][k-1].prefix) {
+	// 		lFound = level;
+	// 	  }
+	// 	  pred = pred->nexts[level][k-1].nxt;
+	// 	  inc();
+	// 	}
+	//   }
+	//   succs[level][k] = pred->nexts[level][k].nxt;
+	// }
   }
-  return -1;
+  return lFound;
+}
+
+// Doesn't work.
+int SkipList::insert(int key) {
+  node *preds[max_level][FANOUT], *succs[max_level][FANOUT];
+  int found = findNode(key, preds, succs);
+  if (found != -1) return 0;
+  node* add = new node();
+  add->key = key;
+  int topLevel = randomLevel(max_level);
+  for (int i = 0; i < topLevel; i++) {
+	add->nexts[i][FANOUT-1].nxt = succs[i][FANOUT-1];
+	add->nexts[i][FANOUT-1].prefix = succs[i][FANOUT-1]->key;
+	preds[i][FANOUT-1]->nexts[i][FANOUT-1].nxt = add;
+	preds[i][FANOUT-1]->nexts[i][FANOUT-1].prefix = key;
+	for (int k = 0; k < FANOUT-1; k++) {
+	  if (preds[i][FANOUT-1]->nexts[i][k].prefix > key) {
+		add->nexts[i][k].nxt = preds[i][FANOUT-1]->nexts[i][k].nxt;
+		add->nexts[i][k].prefix = preds[i][FANOUT-1]->nexts[i][k].prefix;
+		preds[i][k]->nexts[i][k].nxt = NULL;
+		preds[i][k]->nexts[i][k].prefix = 0;
+	  }
+	}
+  }
+  return 1;
 }
 
 SkipList* SkipList::init_list(int sz, int max_level) {
@@ -158,10 +240,17 @@ SkipList* SkipList::init_list(int sz, int max_level) {
   return sk4;
 }
 
+int insert_test(SkipList* sk) {
+  assert (sk->lookup(99) <= 0);
+  assert (sk->insert(99) > 0);
+  assert (sk->lookup(99) > 0);
+  assert (sk->insert(99) <= 0);
+}
+
 int basic_test(SkipList* sk) {
-  assert (sk->lookup(5) > 0);
-  assert (sk->lookup(0) > 0);
-  assert (sk->lookup(15) > 0);
+  for (int i = 0; i < 16; i++) {
+	assert (sk->lookup(i) > 0);
+  }
   assert (sk->lookup(99) <= 0);
   printf("PASSED\n");
 }

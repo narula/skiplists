@@ -27,7 +27,7 @@ SkipList::~SkipList() {
 
 int SkipList::lookup(int key) {
   node *preds[max_level][FANOUT], *succs[max_level][FANOUT];
-  if (findNode(key, preds, succs) >= 0) {
+  if (fastFindNode(key) >= 0) {
 	return 1;
   } else {
 	return 0;
@@ -66,6 +66,30 @@ int randomLevel(int max) {
   if(toplayer > max)
 	toplayer = max;
   return toplayer;
+}
+
+// Does not keep track of information for inserts.
+int SkipList::fastFindNode(int key) {
+  node* pred = head;
+  int lFound = -1;
+  for (int level = pred->topLevel-1; level >= 0; level--) {
+	node* curr = pred->nexts[level][0].nxt;
+	inc();
+	node * orig = pred;
+	int ahead = 0;
+	while (key > orig->nexts[level][ahead].prefix) {
+	  ahead++;
+	}
+	if (ahead > 0) {
+	  pred = orig->nexts[level][ahead-1].nxt;
+	  curr = pred->nexts[level][0].nxt;
+	  inc();
+	}
+	if (lFound == -1 && key == orig->nexts[level][ahead].prefix) {
+	  return level;
+	}
+  }
+  return -1;
 }
 
 int SkipList::findNode(int key, node* preds[][FANOUT], node* succs[][FANOUT]) {

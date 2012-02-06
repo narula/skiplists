@@ -41,6 +41,7 @@ class SkipList {
   static SkipList* init_list(int sz, int maxl);
 
  private:
+  int fastFindNode(int key);
   int findNode(int key, node* preds[][FANOUT], node* succs[][FANOUT]);
   int pointer_follows;
   int count;

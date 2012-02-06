@@ -72,38 +72,21 @@ int SkipList::findNode(int key, node* preds[][FANOUT], node* succs[][FANOUT]) {
   node* pred = head;
   int lFound = -1;
   for (int level = pred->topLevel-1; level >= 0; level--) {
-	node* curr;
-	curr = pred->nexts[level][0].nxt;
+	node* curr = pred->nexts[level][0].nxt;
+	inc();
+	node * orig = pred;
 	int ahead = 0;
-	while (key > pred->nexts[level][ahead].prefix) {
+	while (key > orig->nexts[level][ahead].prefix) {
 	  ahead++;
-	  curr = pred->nexts[level][ahead].nxt;
+	}
+	if (ahead > 0) {
+	  pred = orig->nexts[level][ahead-1].nxt;
+	  curr = pred->nexts[level][0].nxt;
 	  inc();
 	}
-	while (key > pred->nexts[level][0].prefix) {
-	  pred = curr;
-	  curr = pred->nexts[level][FANOUT-1].nxt;
-	  inc();
-	}
-	preds[level][FANOUT-1] = pred;
-	succs[level][FANOUT-1] = curr;
-	if (lFound == -1 && key == pred->nexts[level][FANOUT-1].prefix) {
+	if (lFound == -1 && key == orig->nexts[level][ahead].prefix) {
 	  lFound = level;
 	  continue;
-	}
-
-	// pred.key is less than key, curr.key is greater than key.
-	int k = 0;
-	while (key > pred->nexts[level][k].prefix) {
-	  k++;
-	}
-	//assert(k < FANOUT);
-	if (k != 0) {
-	  if (lFound == -1 && key == pred->nexts[level][k-1].prefix) {
-		lFound = level;
-	  }
-	  pred = pred->nexts[level][k-1].nxt;
-	  inc();
 	}
   }
   return lFound;
@@ -146,13 +129,13 @@ SkipList* SkipList::init_list(int sz, int max_level) {
   sk[0]->topLevel = max_level;
   for (int i = 0; i < max_level; i++) {
 	for (int k = 0; k < FANOUT; k++) {
-	  sk[0]->nexts[i][k].prefix = 0;
-	  sk[0]->nexts[i][k].nxt = sk[1];
+	  sk[0]->nexts[i][k].prefix = k;
+	  sk[0]->nexts[i][k].nxt = sk[1+k];
 	}
   }
   for (int i = 1; i < max_level; i++) {
 	for (int j = 0; j < FANOUT; j++) {
-	  int ptr = int(pow(FANOUT, i-1)*(j+1)) - 1; // i=1 ptr=3, 7, 11, 15 
+	  int ptr = int(pow(FANOUT, i)*(j+1)) - 1; // i=1 ptr=3, 7, 11, 15 
 	  if (ptr < sz) {
 		sk[0]->nexts[i][j].prefix = ptr;     // i=2 ptr=15, 31, 47, 63
 		sk[0]->nexts[i][j].nxt = sk[ptr+1]; // i=3 ptr=63, ....
@@ -172,18 +155,20 @@ SkipList* SkipList::init_list(int sz, int max_level) {
 	  }	
 	}
 	// fix up next when near end for +1 level
-	int np = sk[i]->key+1;
-	node* nptr = sk[i+1];
-	if (np >= sz) {
-	  np = INT_MAX;
-	  nptr = sk[sz+1];
+	for (int k = 0; k < FANOUT; k++) {
+	  int np = sk[i]->key + 1 + k;
+	  node* nptr = sk[i+1+k];
+	  if (np >= sz) {
+		np = INT_MAX;
+		nptr = sk[sz+1];
+	  }
+	  sk[i]->nexts[0][k].prefix = np;
+	  sk[i]->nexts[0][k].nxt = nptr;
 	}
-	sk[i]->nexts[0][FANOUT-1].prefix = np;
-	sk[i]->nexts[0][FANOUT-1].nxt = nptr;
 
 	for (int j = 1; j < sk[i]->topLevel; j++) {
 	  for (int k = 0; k < FANOUT; k++) {
-		int nextp = int(pow(FANOUT, j-1)*(k+1)) + i - 1;
+		int nextp = int(pow(FANOUT, j)*(k+1)) + i - 1;
 		node* nextptr;;
 		if (nextp >= sz) {
 		  nextp = INT_MAX;
@@ -237,6 +222,7 @@ int insert_test(SkipList* sk) {
 
 int basic_test(SkipList* sk) {
   for (int i = 0; i < 16; i++) {
+	printf("%d ", i);
 	assert (sk->lookup(i) > 0);
   }
   assert (sk->lookup(99) <= 0);
@@ -247,8 +233,7 @@ void SkipList::printlist() {
   node* ptr = head;
   while (ptr != tail) {
 	printf("[K:%02d ", ptr->key);
-	printf("N: %02d ", ptr->nexts[0][0].nxt->key);
-	for (int j = 1; j < ptr->topLevel; j++) {
+	for (int j = 0; j < ptr->topLevel; j++) {
 	  printf("N: ");
 	  for (int k = 0; k < FANOUT; k++) {
 		printf("%02d ", ptr->nexts[j][k].nxt->key);
@@ -289,10 +274,10 @@ void SkipList::pretty_print_skiplist() {
 	
 	for (int i = 0; i < ptr->topLevel; i++) {
 	  printf("[P:");
-	  if (ptr->nexts[i][FANOUT-1].prefix == INT_MAX) {
+	  if (ptr->nexts[i][0].prefix == INT_MAX) {
 		printf("ND");
 	  } else {		
-		printf("%02d", ptr->nexts[i][FANOUT-1].prefix);
+		printf("%02d", ptr->nexts[i][0].prefix);
 	  }
 	  printf("] ");
 	}
@@ -304,7 +289,7 @@ void SkipList::pretty_print_skiplist() {
 	  printf("   |   ");
 	}
 	printf ("\n");
-	ptr = ptr->nexts[0][FANOUT-1].nxt;
+	ptr = ptr->nexts[0][0].nxt;
   }
 }
 
@@ -318,6 +303,7 @@ int main(int argc, char** argv) {
   if (LIST_SIZE < 99) {
 	basic_test(stest2);
 	stest2->pretty_print_skiplist();
+	stest2->printlist();
   }
   stest2->enable_counts();
   timespec ts;
@@ -331,6 +317,6 @@ int main(int argc, char** argv) {
   clock_gettime(CLOCK_MONOTONIC, &ts);
   stest2->disable_counts();
   time_t lookup_time = ts.tv_sec*1000000000 + ts.tv_nsec;
-  printf("lookup: %ld; itr: %d; size: %d; levels: %d; probability: %d; ptr: %d\n", 
+  printf("lookupns: %ld; itr: %d; size: %d; levels: %d; probability: %d; ptr: %d\n", 
 		 (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE, maxl, FANOUT, stest2->get_ptr_count());
 }

@@ -74,6 +74,7 @@ int SkipList::findNode(int key, node* preds[][FANOUT], node* succs[][FANOUT]) {
   for (int level = pred->topLevel-1; level >= 0; level--) {
 	node* curr;
 	curr = pred->nexts[level][FANOUT-1].nxt;
+	inc();
 	while (key > pred->nexts[level][FANOUT-1].prefix) {
 	  pred = curr;
 	  curr = pred->nexts[level][FANOUT-1].nxt;
@@ -343,6 +344,6 @@ int main(int argc, char** argv) {
   clock_gettime(CLOCK_MONOTONIC, &ts);
   stest2->disable_counts();
   time_t lookup_time = ts.tv_sec*1000000000 + ts.tv_nsec;
-  printf("lookup: %ld; itr: %d; size: %d; levels: %d; probability: %d; ptr: %d\n", 
+  printf("lookupns: %ld; itr: %d; size: %d; levels: %d; probability: %d; ptr: %d\n", 
 		 (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE, maxl, FANOUT, stest2->get_ptr_count());
 }

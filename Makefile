@@ -1,5 +1,5 @@
 
-all: skiplist skiplist2 skiplist-f
+all: skiplist skiplist2 skiplist-f skiplist-e
 
 skiplist: skiplist.o
 	g++ skiplist.o -lrt -o skiplist
@@ -8,7 +8,7 @@ skiplist.o: skiplist.cc
 	g++ -c -O3 skiplist.cc
 
 clean:
-	rm -rf *.o skiplist skiplist2 skiplist-f
+	rm -rf *.o skiplist skiplist2 skiplist-f skiplist-e
 
 debug:
 	g++ -DDEBUG -g -c skiplist.cc

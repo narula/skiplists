@@ -20,7 +20,7 @@ struct node {
 class SkipList {
  public:
   SkipList();
-  SkipList(int prob, int maxl);
+  SkipList(int maxl);
   ~SkipList();
 
   int lookup(int key);
@@ -34,11 +34,10 @@ class SkipList {
   void pretty_print_skiplist();
   node* head;
   node* tail;
-  int probability;
   int max_level;
 
 
-  static SkipList* init_list(int sz, int maxl);
+  static SkipList* init_list(int sz, int high, int maxl);
 
  private:
   int fastFindNode(int key);

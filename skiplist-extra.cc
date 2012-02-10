@@ -478,7 +478,7 @@ int main(int argc, char** argv) {
   clock_gettime(CLOCK_MONOTONIC, &ts);
   stest2->disable_counts();
   time_t lookup_time = ts.tv_sec*1000000000 + ts.tv_nsec;
-  for (int i = LIST_SIZE; i < LIST_SIZE+ITERATIONS; i++) {
+  for (int i = 0; i < ITERATIONS; i++) {
 	stest2->insert(rand() % POOL);
   }
   clock_gettime(CLOCK_MONOTONIC, &ts);

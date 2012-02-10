@@ -36,7 +36,6 @@ class SkipList {
   node* tail;
   int max_level;
 
-
   static SkipList* init_list(int sz, int high, int maxl);
 
  private:

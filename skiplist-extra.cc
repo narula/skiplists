@@ -35,6 +35,12 @@ SkipList::SkipList(int maxl) {
 }
 
 SkipList::~SkipList() {
+  node* ptr = head;
+  while (ptr != NULL && ptr != tail) {
+	node* tmp = ptr;
+	ptr = ptr->nexts[0][0].nxt;
+	delete tmp;
+  }
   if (head) delete head;
   if (tail) delete tail;
 }
@@ -116,18 +122,14 @@ int SkipList::findNode(int key, node* preds[][FANOUT], node* succs[][FANOUT]) {
   for (int level = pred->topLevel-1; level >= 0; level--) {
 	node* curr = pred->nexts[level][FANOUT-1].nxt;
 	next* bigFour = NULL;
-	bool haveFour = false;
+	int extra = 0;
 	while (key > pred->nexts[level][FANOUT-1].prefix) {
 	  bigFour = pred->nexts[level];
 	  pred = curr;
 	  curr = pred->nexts[level][FANOUT-1].nxt;
 	  inc();
-	  haveFour = true;
 	}
-	int extra = 0;
-	while (key > pred->nexts[level][extra].prefix) {
-	  extra++;
-	}
+	while (key > pred->nexts[level][extra].prefix) extra++;
 	curr = pred->nexts[level][extra].nxt;
 	node* prev = pred;
 	if (extra > 0) {
@@ -144,7 +146,7 @@ int SkipList::findNode(int key, node* preds[][FANOUT], node* succs[][FANOUT]) {
 	for (int i = 0; i < extra; i++) {
 	  preds[level][i] = pred->nexts[level][extra-i-1].nxt;
 	}
-	if (haveFour == false) {
+	if (bigFour == NULL) {
 	  // did not make it past head
 	  preds[level][extra] = pred;
 	} else {
@@ -300,7 +302,7 @@ SkipList* perfect_list(int sz, int max_level) {
   return sk4;
 }
 
-void SkipList::printlist() {
+void SkipList::detailed_print() {
   node* ptr = head;
   while (ptr != tail) {
 	printf("[K:%02d ", ptr->key);
@@ -320,7 +322,7 @@ void SkipList::printlist() {
   }
 }
 
-void SkipList::pretty_print_skiplist() {
+void SkipList::pretty_print() {
   node* ptr = head;
   while (ptr != 0) {
 	if (ptr != head) {
@@ -368,14 +370,14 @@ void SkipList::pretty_print_skiplist() {
   }
 }
 
-void fillRandom(SkipList* skip, int sz, int high) {
+void fillRandom(SkipList* skip, int sz) {
   int count = 0;
   while (count < sz) {
-	if (skip->insert(rand() % high) > 0) {
+	if (skip->insert(rand() % sz) > 0) {
 	  count++;
 	}
   }
-  printf("Inserted %d keys\n", count);
+  printf("Inserted %d keys randomly\n", count);
 }
 
 void fillForward(SkipList* skip, int sz) {
@@ -385,7 +387,7 @@ void fillForward(SkipList* skip, int sz) {
 	  count++;
 	}
   }
-  printf("Inserted %d keys\n", count);
+  printf("Inserted %d keys forwards\n", count);
 }
 
 void fillBackward(SkipList* skip, int sz) {
@@ -395,58 +397,59 @@ void fillBackward(SkipList* skip, int sz) {
 	  count++;
 	}
   }
-  printf("Inserted %d keys\n", count);
+  printf("Inserted %d keys backwards\n", count);
 }
 
-SkipList* empty_fill(int sz) {
-  int high = 100;
+SkipList* empty_fill(int sz, void (*fill)(SkipList*, int)) {
   int maxl = floor(log(sz)/log(FANOUT)) + 1;
   SkipList* skip = new SkipList(maxl);
-  fillBackward(skip, sz);
+  fill(skip, sz);
   return skip;
 }
 
 int perfect_insert_test(SkipList* sk) {
   assert(sk->lookup(99) <= 0);
   assert(sk->insert(99) > 0);
-  sk->pretty_print_skiplist();
-  sk->printlist();
   assert(sk->lookup(99) > 0);
   assert(sk->insert(99) <= 0);
-
   assert(sk->lookup(98) <= 0);
   assert(sk->insert(98) > 0);
   assert(sk->lookup(98) > 0);
   assert(sk->insert(98) <= 0);
-
   assert(sk->insert(90) > 0);
   assert(sk->lookup(90) > 0);
-
-  sk->pretty_print_skiplist();
-  sk->printlist();
-
   assert(sk->insert(97) > 0);
   assert(sk->lookup(97) > 0);
-  sk->pretty_print_skiplist();
-  sk->printlist();
 }
 
 int insert_test(int sz) {
-  printf("Testing inserts...\n");
-  SkipList* sk4 = empty_fill(sz);
+  printf("Testing imperfect inserts...\n");
+  SkipList* sk4 = empty_fill(sz, &fillForward);
+  for (int i = 0; i < sz; i++) {
+	assert(sk4->lookup(i) > 0);
+  }
+  sk4 = empty_fill(sz, &fillBackward);
+  for (int i = 0; i < sz; i++) {
+	assert(sk4->lookup(i) > 0);
+  }
+  sk4 = empty_fill(sz, &fillRandom);
   for (int i = 0; i < sz; i++) {
 	assert(sk4->lookup(i) > 0);
   }
   printf("PASSED\n");
 }
 
-int basic_test(int sz) {
-  printf("Testing perfect skiplist lookups...\n");
-  SkipList* sk = perfect_list(sz, MAX_LEVEL);
+int perfect_test(int sz) {
+  printf("Testing perfect skiplist lookups... ");
+  int maxl = floor(log(sz)/log(FANOUT)) + 1;
+  SkipList* sk = perfect_list(sz, maxl);
   for (int i = 0; i < sz; i++) {
 	assert (sk->lookup(i) > 0);
   }
   assert (sk->lookup(99) <= 0);
+  printf("PASSED\n");
+  printf("Testing perfect skiplist inserts... ");
+  perfect_insert_test(sk);
   printf("PASSED\n");
 }
 
@@ -460,7 +463,7 @@ int main(int argc, char** argv) {
   int ITERATIONS = 10000;
   int maxl = floor(log(LIST_SIZE)/log(4))+1;
   if (LIST_SIZE < 99) {	
-	basic_test(LIST_SIZE);
+	perfect_test(LIST_SIZE);
 	insert_test(LIST_SIZE);
 	exit(1);
   }

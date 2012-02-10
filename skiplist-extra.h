@@ -30,8 +30,8 @@ class SkipList {
   void inc() { if (count == 1) pointer_follows++; };
   int get_ptr_count() { return pointer_follows; };
 
-  void printlist();
-  void pretty_print_skiplist();
+  void detailed_print();
+  void pretty_print();
   node* head;
   node* tail;
   int max_level;

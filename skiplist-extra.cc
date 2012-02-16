@@ -31,7 +31,9 @@ SkipList::SkipList(int maxl) {
   }
   count = 0;
   pointer_follows = 0;
-
+  for (int i = 0; i <= FANOUT; i++) {
+	drop_down_pred[i] = 0;
+  }
 }
 
 SkipList::~SkipList() {
@@ -47,7 +49,7 @@ SkipList::~SkipList() {
 
 int SkipList::lookup(int key) {
   node *preds[max_level][FANOUT], *succs[max_level][FANOUT];
-  //  if (findNode(key, preds, succs) >= 0) {
+  //if (findNode(key, preds, succs) >= 0) {
   if (fastFindNode(key) >= 0) {
 	return 1;
   } else {
@@ -101,9 +103,7 @@ int SkipList::fastFindNode(int key) {
 	  inc();
 	}
 	int extra = 0;
-	while (key > pred->nexts[level][extra].prefix) {
-	  extra++;
-	}
+	while (key > pred->nexts[level][extra].prefix) extra++;
 	if (lFound == -1 && key == pred->nexts[level][extra].prefix) {
 	  return level;
 	}
@@ -116,53 +116,122 @@ int SkipList::fastFindNode(int key) {
   return -1;
 }
 
-int SkipList::findNode(int key, node* preds[][FANOUT], node* succs[][FANOUT]) {
+// Changes to fast find to see what is making it fast.
+int SkipList::fastFindTest(int key) {
   node* pred = head;
   int lFound = -1;
+  node *preds[max_level][FANOUT], *succs[max_level][FANOUT];
+  for (int i = 0; i < max_level; i++) {
+	for (int k = 0; k < FANOUT; k++) {
+	  preds[i][k] = NULL;
+	}
+  }	
   for (int level = pred->topLevel-1; level >= 0; level--) {
 	node* curr = pred->nexts[level][FANOUT-1].nxt;
-	next* bigFour = NULL;
-	int extra = 0;
+	next* prevFour = NULL;
 	while (key > pred->nexts[level][FANOUT-1].prefix) {
-	  bigFour = pred->nexts[level];
+	  prevFour = pred->nexts[level];
 	  pred = curr;
 	  curr = pred->nexts[level][FANOUT-1].nxt;
 	  inc();
 	}
+	int extra = 0;
 	while (key > pred->nexts[level][extra].prefix) extra++;
-	curr = pred->nexts[level][extra].nxt;
+	if (lFound == -1 && key == pred->nexts[level][extra].prefix) {
+	  lFound = level;
+	}
 	node* prev = pred;
 	if (extra > 0) {
 	  prev = pred->nexts[level][extra-1].nxt;
 	}
-	if (lFound == -1 && key == pred->nexts[level][extra].prefix) {
-	  lFound = level;
-	}
-	succs[level][0] = curr;
-	for (int i = 1; i < FANOUT; i++) {
+	for (int i = 0; i < FANOUT; i++) {
 	  succs[level][i] = prev->nexts[level][i].nxt;
 	}
 	// get the ones right before (extra)
 	for (int i = 0; i < extra; i++) {
 	  preds[level][i] = pred->nexts[level][extra-i-1].nxt;
 	}
-	if (bigFour == NULL) {
-	  // did not make it past head
+	if (prevFour == NULL) {
+	  // did not make it past head, later in preds will be NULL.
 	  preds[level][extra] = pred;
 	} else {
 	  // either get last n where n = FANOUT-extra)  or whole thing backwards.
 	  for (int i = extra; i < FANOUT; i++) {
-		preds[level][i] = bigFour[FANOUT-i-1+extra].nxt;
+		preds[level][i] = prevFour[FANOUT-i-1+extra].nxt;
 	  }
+	  inc();
 	  // reset pred to be before
 	  pred = preds[level][FANOUT-1];
 	}
-	assert(pred != NULL);
+
+	// ARGH FIX.
+	if (level > 0) {
+	  for (int i = 0; i < FANOUT; i++) {
+	  	if (preds[level] && preds[level][i] && 
+	  		preds[level][i]->nexts[level-1][FANOUT-1].prefix <= key) {
+	  	  pred = preds[level][i];
+	  	  break;
+	  	}
+	  }
+	}
   }
   return lFound;
 }
 
-// Doesn't work.
+int SkipList::findNode(int key, node* preds[][FANOUT], node* succs[][FANOUT]) {
+  node* pred = head;
+  int lFound = -1;
+  for (int level = pred->topLevel-1; level >= 0; level--) {
+	node* curr = pred->nexts[level][FANOUT-1].nxt;
+	next* prevFour = NULL;
+	while (key > pred->nexts[level][FANOUT-1].prefix) {
+	  prevFour = pred->nexts[level];
+	  pred = curr;
+	  curr = pred->nexts[level][FANOUT-1].nxt;
+	  inc();
+	}
+	int extra = 0;
+	while (key > pred->nexts[level][extra].prefix) extra++;
+	if (lFound == -1 && key == pred->nexts[level][extra].prefix) {
+	  lFound = level;
+	}
+	node* prev = pred;
+	if (extra > 0) {
+	  prev = pred->nexts[level][extra-1].nxt;
+	}
+	for (int i = 0; i < FANOUT; i++) {
+	  succs[level][i] = prev->nexts[level][i].nxt;
+	}
+	// get the ones right before (extra)
+	for (int i = 0; i < extra; i++) {
+	  preds[level][i] = pred->nexts[level][extra-i-1].nxt;
+	}
+	if (prevFour == NULL) {
+	  // did not make it past head, later in preds will be NULL.
+	  preds[level][extra] = pred;
+	} else {
+	  // either get last n where n = FANOUT-extra)  or whole thing backwards.
+	  for (int i = extra; i < FANOUT; i++) {
+		preds[level][i] = prevFour[FANOUT-i-1+extra].nxt;
+	  }
+	  inc();
+	  // reset pred to be before
+	  pred = preds[level][FANOUT-1];
+	}
+	if (level > 0) {
+	  for (int i = 0; i < FANOUT; i++) {
+	  	if (preds[level] && preds[level][i] && 
+	  		preds[level][i]->nexts[level-1][FANOUT-1].prefix <= key) {
+	  	  pred = preds[level][i];
+		  drop_down_pred[i]++;
+	  	  break;
+	  	}
+	  }
+	}
+  }
+  return lFound;
+}
+
 int SkipList::insert(int key) {
   node *preds[max_level][FANOUT], *succs[max_level][FANOUT];
   for (int i = 0; i < max_level; i++) {
@@ -181,15 +250,15 @@ int SkipList::insert(int key) {
 	for (int k = 0; k < FANOUT; k++) {
 	  add->nexts[level][k].nxt = succs[level][k];
 	  add->nexts[level][k].prefix = succs[level][k]->key;
-	  if (preds[level][k]) {
+	  node* pr = preds[level][k];
+	  if (pr) {
 		// scoot rest down
-		node* pr = preds[level][k];
 		for (int j = FANOUT-2; j >= k; j--) {
-		  preds[level][k]->nexts[level][j+1].nxt = pr->nexts[level][j].nxt;
-		  preds[level][k]->nexts[level][j+1].prefix = pr->nexts[level][j].prefix;
+		  pr->nexts[level][j+1].nxt = pr->nexts[level][j].nxt;
+		  pr->nexts[level][j+1].prefix = pr->nexts[level][j].prefix;
 		}
-		preds[level][k]->nexts[level][k].nxt = add;
-		preds[level][k]->nexts[level][k].prefix  = key;
+		pr->nexts[level][k].nxt = add;
+		pr->nexts[level][k].prefix  = key;
 	  }
 	}
   }
@@ -314,7 +383,6 @@ void SkipList::detailed_print() {
 		} else {		
 		  printf("%02d ", ptr->nexts[level][k].nxt->key);
 		}
-		//printf("%02d ", ptr->nexts[level][k].nxt->key);
 	  }
 	}
 	printf("]\n");
@@ -327,43 +395,48 @@ void SkipList::pretty_print() {
   while (ptr != 0) {
 	if (ptr != head) {
 	  for (int i = 0; i < ptr->topLevel; i++) {
-		printf("   V   ");
+		printf("  V               ");
 	  }
 	  for (int i = ptr->topLevel; i < max_level; i++) {
-		printf("   |   ");
+		printf("  |               ");
 	  }
 	}
 	printf("\n");
 	if (ptr == tail) {
 	  for (int i = 0; i < max_level; i++) {
-		printf("[K:ND] ");
+		printf("[K:ND]            ");
 	  }
 	  printf("\n");
 	  return;
 	}
 	for (int i = 0; i < ptr->topLevel; i++) {
-	  printf("[K:%02d] ", ptr->key);
+	  printf("[K:%02d]            ", ptr->key);
 	}
 	for (int i = ptr->topLevel; i < max_level; i++) {
-	  printf("   |   ");
+	  printf("  |               ");
 	}
 	printf("\n");
 	
 	for (int i = 0; i < ptr->topLevel; i++) {
 	  printf("[P:");
-	  if (ptr->nexts[i][0].prefix == INT_MAX) {
-		printf("ND");
-	  } else {		
-		printf("%02d", ptr->nexts[i][0].prefix);
+	  for (int k = 0; k < FANOUT; k++) {
+		if (ptr->nexts[i][k].prefix == INT_MAX) {
+		  printf("ND");
+		} else {		
+		  printf("%02d", ptr->nexts[i][k].prefix);
+		}
+		if (k != FANOUT-1) {
+		  printf("|");
+		}
 	  }
-	  printf("] ");
+	  printf("]   ");
 	}
 	for (int i = ptr->topLevel; i < max_level; i++) {
-	  printf("   |   ");
+	  printf("  |               ");
 	}
 	printf("\n");
 	for (int i = 0; i < max_level; i++) {
-	  printf("   |   ");
+	  printf("  |               ");
 	}
 	printf ("\n");
 	ptr = ptr->nexts[0][0].nxt;
@@ -373,11 +446,15 @@ void SkipList::pretty_print() {
 void fillRandom(SkipList* skip, int sz) {
   int count = 0;
   while (count < sz) {
-	if (skip->insert(rand() % sz) > 0) {
+	int rnd = rand() % sz;
+	if (skip->insert(rnd) > 0) {
+	  printf("%d ", rnd);
 	  count++;
 	}
   }
-  printf("Inserted %d keys randomly\n", count);
+  skip->pretty_print();
+  //  skip->detailed_print();
+  printf("\nInserted %d keys randomly\n", count);
 }
 
 void fillForward(SkipList* skip, int sz) {
@@ -409,17 +486,32 @@ SkipList* empty_fill(int sz, void (*fill)(SkipList*, int)) {
 
 int perfect_insert_test(SkipList* sk) {
   assert(sk->lookup(99) <= 0);
+  assert(sk->fastFindTest(99) < 0);
+  assert(sk->fastFindNode(99) < 0);
   assert(sk->insert(99) > 0);
   assert(sk->lookup(99) > 0);
+  assert(sk->fastFindNode(99) >= 0);
+  assert(sk->fastFindTest(99) >= 0);
   assert(sk->insert(99) <= 0);
+
   assert(sk->lookup(98) <= 0);
+  assert(sk->fastFindTest(98) < 0);
+  assert(sk->fastFindNode(98) < 0);
   assert(sk->insert(98) > 0);
   assert(sk->lookup(98) > 0);
+  assert(sk->fastFindTest(98) >= 0);
+  assert(sk->fastFindNode(98) >= 0);
   assert(sk->insert(98) <= 0);
+
   assert(sk->insert(90) > 0);
   assert(sk->lookup(90) > 0);
+  assert(sk->fastFindTest(90) >= 0);
+  assert(sk->fastFindNode(90) >= 0);
+
   assert(sk->insert(97) > 0);
   assert(sk->lookup(97) > 0);
+  assert(sk->fastFindTest(97) >= 0);
+  assert(sk->fastFindNode(97) >= 0);
 }
 
 int insert_test(int sz) {
@@ -427,14 +519,20 @@ int insert_test(int sz) {
   SkipList* sk4 = empty_fill(sz, &fillForward);
   for (int i = 0; i < sz; i++) {
 	assert(sk4->lookup(i) > 0);
+	assert(sk4->fastFindNode(i) >= 0);
+	assert(sk4->fastFindTest(i) >= 0);
   }
   sk4 = empty_fill(sz, &fillBackward);
   for (int i = 0; i < sz; i++) {
 	assert(sk4->lookup(i) > 0);
+	assert(sk4->fastFindNode(i) >= 0);
+	assert(sk4->fastFindTest(i) >= 0);
   }
   sk4 = empty_fill(sz, &fillRandom);
   for (int i = 0; i < sz; i++) {
 	assert(sk4->lookup(i) > 0);
+	assert(sk4->fastFindNode(i) >= 0);
+	assert(sk4->fastFindTest(i) >= 0);
   }
   printf("PASSED\n");
 }
@@ -471,22 +569,38 @@ int main(int argc, char** argv) {
   assert(stest2);
   stest2->enable_counts();
   timespec ts;
+
   clock_gettime(CLOCK_MONOTONIC, &ts);
   time_t start = ts.tv_sec*1000000000 + ts.tv_nsec;
+  for (int i = 0; i < ITERATIONS; i++) {
+	int key = (rand() % LIST_SIZE);
+	if (ITERATIONS < 50) printf("key: %d\n", key);
+	stest2->fastFindTest(key);
+  }
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  time_t test_lookup_time = ts.tv_sec*1000000000 + ts.tv_nsec;
+  int test_lookup_ptr_follows = stest2->get_ptr_count();
+  stest2->reset();
+  assert(stest2->get_ptr_count() == 0);
+
   for (int i = 0; i < ITERATIONS; i++) {
 	int key = (rand() % LIST_SIZE);
 	if (ITERATIONS < 50) printf("key: %d\n", key);
 	stest2->lookup(key);
   }
   clock_gettime(CLOCK_MONOTONIC, &ts);
-  stest2->disable_counts();
   time_t lookup_time = ts.tv_sec*1000000000 + ts.tv_nsec;
+  int lookup_ptr_follows = stest2->get_ptr_count();
+  stest2->reset();
+  assert(stest2->get_ptr_count() == 0);
+
   for (int i = 0; i < ITERATIONS; i++) {
 	stest2->insert(rand() % POOL);
   }
   clock_gettime(CLOCK_MONOTONIC, &ts);
   time_t insert_time = ts.tv_sec*1000000000 + ts.tv_nsec;
+  int insert_ptr_follows = stest2->get_ptr_count();
 
-  printf("insertns: %ld; lookupns: %ld; itr: %d; size: %d; levels: %d; probability: %d; ptr: %d\n", 
-		 (insert_time-lookup_time)/(ITERATIONS), (lookup_time-start)/(ITERATIONS), ITERATIONS, LIST_SIZE, maxl, FANOUT, stest2->get_ptr_count());
+  printf("insertns: %ld; lookupns: %ld; testns: %ld, itr: %d; size: %d; levels: %d; probability: %d; ptr_lookups: %d, ptr_inserts: %d, ptr_test:%d, dd0:%d, dd1:%d, dd2:%d, dd3:%d, ddx:%d\n", 
+		 (insert_time-lookup_time)/(ITERATIONS), (lookup_time-test_lookup_time)/(ITERATIONS), (test_lookup_time-start)/ITERATIONS, ITERATIONS, LIST_SIZE, maxl, FANOUT, lookup_ptr_follows, insert_ptr_follows, test_lookup_ptr_follows, stest2->drop_down_pred[0], stest2->drop_down_pred[1], stest2->drop_down_pred[2], stest2->drop_down_pred[3], stest2->drop_down_pred[4]);
 }

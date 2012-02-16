@@ -29,6 +29,7 @@ class SkipList {
   void disable_counts() { count = 0; } ;
   void inc() { if (count == 1) pointer_follows++; };
   int get_ptr_count() { return pointer_follows; };
+  void reset() { pointer_follows = 0; };
 
   void detailed_print();
   void pretty_print();
@@ -37,10 +38,12 @@ class SkipList {
   int max_level;
 
   static SkipList* init_list(int sz, int high, int maxl);
-
- private:
+  int fastFindTest(int key);
   int fastFindNode(int key);
   int findNode(int key, node* preds[][FANOUT], node* succs[][FANOUT]);
+  int drop_down_pred[FANOUT+1];
+
+ private:
   int pointer_follows;
   int count;
 };

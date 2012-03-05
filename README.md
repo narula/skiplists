@@ -4,4 +4,4 @@ extra pointers.  The best is skiplist-extra.
 To run:
 
 make
-./skiplist-f 10000000
+./skiplist-e 10000000
